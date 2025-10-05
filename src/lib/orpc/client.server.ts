@@ -13,6 +13,8 @@ globalThis.$orpcClient = createRouterClient(router, {
    * For per-request context, use middleware context or pass a function as the initial context.
    */
   context: async () => ({
-    headers: await headers(), // provide headers if initial context required
+    reqHeaders: await headers(),
+    user: null,
+    session: null,
   }),
 });

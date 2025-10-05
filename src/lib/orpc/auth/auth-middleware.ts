@@ -12,9 +12,7 @@ export const authMiddleware = authBase.middleware(async ({ context, next }) => {
   });
 
   if (!session || error) {
-    context.user = null;
-    context.session = null;
-    return next();
+    throw new ORPCError("UNAUTHORIZED", { message: "Unauthorized" });
   }
 
   context.user = session.user;
