@@ -1,10 +1,12 @@
 // import seedServices from "./services.seed";
+import seedPosts from "./posts.seed";
 
 async function runAllSeeds() {
   console.log("🌱 Starting database seeding...");
 
   try {
     // await seedServices();
+    await seedPosts();
 
     console.log("🎉 All seeds completed successfully!");
   } catch (error) {
