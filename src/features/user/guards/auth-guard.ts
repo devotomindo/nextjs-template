@@ -7,10 +7,8 @@ import { cache } from "react";
 
 export type UserTable = typeof userTable.$inferSelect;
 
-export type UserAppRoles = UserTable["appRole"];
-
 export const authGuard = cache(async function (props?: {
-  allowedRoles?: UserAppRoles;
+  allowedRoles?: string[];
   headers?: Headers;
 }): Promise<[Auth["$Infer"]["Session"] | null, Error | null]> {
   const allowedRoles = props?.allowedRoles ?? [];
@@ -25,7 +23,7 @@ export const authGuard = cache(async function (props?: {
   }
 
   if (allowedRoles.length > 0) {
-    if (!currentUser.user.appRole || currentUser.user.appRole.length === 0) {
+    if (!currentUser.user.role || currentUser.user.role.length === 0) {
       return [
         null,
         new Error("[AuthGuard Error] App role not found in the user's session"),
@@ -35,12 +33,12 @@ export const authGuard = cache(async function (props?: {
     // Note:
     //  - role -> better-auth's admin plugin ["admin", "user"]
     //  - appRole -> our custom app's role (schema.ts -> userTable -> appRole)
-    const userAppRoles = currentUser.user.appRole;
+    const userRoles = currentUser.user.role as UserTable["role"];
 
-    if (userAppRoles) {
-      const hasPermission = userAppRoles.some((role) =>
-        allowedRoles.includes(role as UserAppRoles[number]),
-      );
+    if (userRoles) {
+      const hasPermission = userRoles
+        .split(",")
+        .some((role) => allowedRoles.includes(role));
 
       if (!hasPermission) {
         return [null, new Error("[AuthGuard Error] User not authorized")];

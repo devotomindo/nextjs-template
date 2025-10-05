@@ -1,6 +1,7 @@
 import { createDrizzleConnection } from "@/db/drizzle/connection";
 import { postsTable } from "@/db/drizzle/schema";
-import { ORPCError, os } from "@orpc/server";
+import { authProcedure } from "@/lib/orpc/auth/auth-procedure";
+import { ORPCError } from "@orpc/server";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 
@@ -10,7 +11,7 @@ const updatePostSchema = z.object({
   description: z.string().optional(),
 });
 
-export const updatePost = os
+export const updatePost = authProcedure
   .input(updatePostSchema)
   .handler(async ({ input }) => {
     const db = createDrizzleConnection();
