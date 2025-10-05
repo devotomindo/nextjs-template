@@ -21,6 +21,12 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from "@/components/ui/input-group";
+import {
   Pagination,
   PaginationContent,
   PaginationEllipsis,
@@ -44,6 +50,7 @@ import {
 } from "@/components/ui/tooltip";
 import { orpcClient, orpcTanstackQueryUtils } from "@/lib/orpc/client";
 import type { Router } from "@/lib/orpc/router";
+import { fuzzyFilter } from "@/lib/table/fuzzy-filter";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { InferRouterOutputs } from "@orpc/server";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -252,11 +259,14 @@ export function PostsView() {
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    filterFns: {
+      fuzzy: fuzzyFilter,
+    },
     state: {
       globalFilter,
     },
     onGlobalFilterChange: setGlobalFilter,
-    globalFilterFn: "includesString",
+    globalFilterFn: "fuzzy",
     initialState: {
       pagination: {
         pageSize: 10,
@@ -349,26 +359,26 @@ export function PostsView() {
             </DialogContent>
           </Dialog>
           {!isLoading && !error && posts && posts.length > 0 && (
-            <>
-              <div className="relative">
-                <SearchIcon className="absolute top-2.5 left-2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Search"
-                  value={globalFilter}
-                  onChange={(e) => setGlobalFilter(e.target.value)}
-                  className="w-64 pl-8"
-                />
-              </div>
+            <InputGroup className="w-64">
+              <InputGroupAddon align="inline-start">
+                <SearchIcon />
+              </InputGroupAddon>
+              <InputGroupInput
+                placeholder="Search"
+                value={globalFilter}
+                onChange={(e) => setGlobalFilter(e.target.value)}
+              />
               {globalFilter && (
-                <Button
-                  variant="ghost"
-                  onClick={() => setGlobalFilter("")}
-                  className="h-9 w-9 p-0"
-                >
-                  <XIcon className="h-4 w-4" />
-                </Button>
+                <InputGroupAddon align="inline-end">
+                  <InputGroupButton
+                    size="icon-xs"
+                    onClick={() => setGlobalFilter("")}
+                  >
+                    <XIcon />
+                  </InputGroupButton>
+                </InputGroupAddon>
               )}
-            </>
+            </InputGroup>
           )}
         </div>
       </div>
@@ -391,14 +401,11 @@ export function PostsView() {
         <>
           <div className="rounded-md border">
             <table className="w-full">
-              <thead>
+              <thead className="border-y border-slate-100 bg-slate-50 text-left text-xs tracking-wide text-slate-500 uppercase">
                 {table.getHeaderGroups().map((headerGroup) => (
-                  <tr key={headerGroup.id} className="border-b bg-gray-50">
+                  <tr key={headerGroup.id}>
                     {headerGroup.headers.map((header) => (
-                      <th
-                        key={header.id}
-                        className="border-r p-4 text-left last:border-r-0"
-                      >
+                      <th key={header.id} className="px-4 py-3">
                         {header.isPlaceholder
                           ? null
                           : flexRender(
@@ -413,12 +420,12 @@ export function PostsView() {
               <tbody>
                 {table.getRowModel().rows?.length ? (
                   table.getRowModel().rows.map((row) => (
-                    <tr key={row.id} className="border-b hover:bg-gray-50">
+                    <tr
+                      key={row.id}
+                      className="transition hover:bg-slate-50/70"
+                    >
                       {row.getVisibleCells().map((cell) => (
-                        <td
-                          key={cell.id}
-                          className="border-r p-4 last:border-r-0"
-                        >
+                        <td key={cell.id} className="px-4 py-4">
                           {flexRender(
                             cell.column.columnDef.cell,
                             cell.getContext(),
