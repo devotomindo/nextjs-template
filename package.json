@@ -17,6 +17,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.901.0",
     "@aws-sdk/s3-request-presigner": "^3.901.0",
+    "@fortedigital/nextjs-cache-handler": "^2.1.0",
     "@hookform/resolvers": "^5.2.2",
     "@orpc/client": "^1.9.2",
     "@orpc/server": "^1.9.2",
@@ -44,6 +45,7 @@
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-hook-form": "^7.63.0",
+    "redis": "^5.8.3",
     "server-only": "^0.0.1",
     "sharp": "^0.34.4",
     "sonner": "^2.0.7",

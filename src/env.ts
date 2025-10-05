@@ -10,7 +10,9 @@ export const env = createEnv({
     BETTER_AUTH_SECRET: z.string().min(1),
   },
   shared: {
-    NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
+    NODE_ENV: z
+      .enum(["development", "production", "test"])
+      .default("development"),
   },
   client: {},
   /**
@@ -23,6 +25,7 @@ export const env = createEnv({
     MINIO_ROOT_PASSWORD: process.env.MINIO_ROOT_PASSWORD,
     MINIO_ENDPOINT: process.env.MINIO_ENDPOINT,
     BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
+    NODE_ENV: process.env.NODE_ENV,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially
