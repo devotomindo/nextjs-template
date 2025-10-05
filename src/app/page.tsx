@@ -1,5 +1,5 @@
-import { TestsView } from "@/features/test/components/tests-view";
+import { PostsView } from "@/features/EXAMPLE-post/components/posts-view";
 
 export default function Home() {
-  return <TestsView />;
+  return <PostsView />;
 }
