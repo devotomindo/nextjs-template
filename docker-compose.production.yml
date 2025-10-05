@@ -15,9 +15,19 @@ services:
       service: minio
 
   redis:
-    extends:
-      file: docker-compose.development.yml
-      service: redis
+    container_name: redis
+    image: redis:8.2-alpine
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./docker_data/redis_data:/data
+    command: redis-server --save 60 1 --loglevel warning --requirepass ${REDIS_ACCESS_KEY}
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_ACCESS_KEY}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   nextjs:
     container_name: nextjs
@@ -53,7 +63,7 @@ services:
       - 3000
 
   caddy:
-    image: caddy:2.9.1-alpine
+    image: caddy:2.10.2-alpine
     container_name: caddy
     restart: always
     ports:

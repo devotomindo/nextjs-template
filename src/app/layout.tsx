@@ -1,43 +1,30 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import "./globals.css";
+import "../lib/orpc/client.server"; // for pre-rendering ORPC client
 
-// Mantine styles
-
-import { SearchParamsNotification } from "@/lib/notification/search-params-notification";
+import { Toaster } from "@/components/ui/sonner";
 import TanstackQueryProvider from "@/lib/tanstack-query/provider";
-import {
-  ColorSchemeScript,
-  createTheme,
-  DEFAULT_THEME,
-  mantineHtmlProps,
-  MantineProvider,
-} from "@mantine/core";
-import { ModalsProvider } from "@mantine/modals";
-import { Notifications } from "@mantine/notifications";
+import type { Metadata } from "next";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import NextTopLoader from "nextjs-toploader";
-import { Suspense } from "react";
+
+import "./globals.css";
 
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
 });
 
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-jetbrains-mono",
+  subsets: ["latin"],
+});
+
 export const metadata: Metadata = {
   title: {
-    template: "%s - Website Title",
-    default: "Website Title",
+    template: "%s - Ujian Adaptif PUPR",
+    default: "Ujian Adaptif PUPR",
   },
-  description: "Website Description",
-  icons: [{ rel: "icon", url: "/favicon.ico" }],
+  description: "Ujian Adaptif PUPR",
 };
-
-const mantineTheme = createTheme({
-  fontFamily: `${inter.style.fontFamily}, ${DEFAULT_THEME.fontFamily}`,
-  headings: {
-    fontFamily: `${inter.style.fontFamily}, ${DEFAULT_THEME.fontFamily}`,
-  },
-});
 
 export default function RootLayout({
   children,
@@ -45,32 +32,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" {...mantineHtmlProps}>
-      <head>
-        <ColorSchemeScript defaultColorScheme="light" />
-      </head>
+    <html lang="en">
       <body
         suppressHydrationWarning
-        className={`${inter.variable} antialiased`}
+        className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}
       >
         <NextTopLoader />
 
         <TanstackQueryProvider>
-          <MantineProvider theme={mantineTheme} defaultColorScheme="light">
-            <ModalsProvider>
-              <Notifications
-                position="top-right"
-                zIndex={1000}
-                autoClose={10000}
-              />
+          <div className="min-h-dvh">
+            <main className="mx-auto max-w-7xl px-4 py-6">{children}</main>
+          </div>
 
-              <Suspense>
-                <SearchParamsNotification />
-              </Suspense>
-
-              {children}
-            </ModalsProvider>
-          </MantineProvider>
+          <Toaster position="top-right" richColors closeButton theme="light" />
         </TanstackQueryProvider>
       </body>
     </html>

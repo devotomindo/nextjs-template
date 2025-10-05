@@ -1,26 +1,28 @@
 import * as schema from "@/db/drizzle/schema";
 import { env } from "@/env";
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { Pool } from "pg";
 
-let connection: postgres.Sql;
+let connection: Pool;
 
 const globalConnection = global as typeof globalThis & {
-  connection: postgres.Sql;
+  connection: Pool;
 };
 
 const dbDefaultConfig = {
   schema,
 };
 
-export type DrizzleConnection = ReturnType<typeof drizzle>;
-
 export function createDrizzleConnection(config = dbDefaultConfig) {
+  // if (process.env.NODE_ENV === "production") {
+  // connection = postgres(process.env.SUPABASE_CONNECTION_STRING!, { prepare: false });
+  // } else {
   if (!globalConnection.connection) {
-    globalConnection.connection = postgres(env.DATABASE_URL, {
-      prepare: false,
+    globalConnection.connection = new Pool({
+      connectionString: env.DATABASE_URL,
     });
   }
+  // }
 
   connection = globalConnection.connection;
 
@@ -29,3 +31,6 @@ export function createDrizzleConnection(config = dbDefaultConfig) {
     schema: config.schema,
   });
 }
+
+// Export the database instance
+export const db = createDrizzleConnection();

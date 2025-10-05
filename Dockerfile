@@ -1,77 +1,65 @@
-# syntax=docker.io/docker/dockerfile:1
+FROM node:22-alpine AS base
 
-FROM node:20-alpine AS base
-
-# Install dependencies only when needed
-FROM base AS deps
-# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
-RUN apk add --no-cache libc6-compat
-WORKDIR /app
-
-ENV COREPACK_INTEGRITY_KEYS=0
-
-# Install dependencies based on the preferred package manager
-COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* .npmrc* ./
-RUN \
-  if [ -f yarn.lock ]; then yarn --frozen-lockfile; \
-  elif [ -f package-lock.json ]; then npm ci; \
-  elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm i --frozen-lockfile; \
-  else echo "Lockfile not found." && exit 1; \
-  fi
-
-
-# Rebuild the source code only when needed
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN apk update && \
+    apk add --no-cache libc6-compat && \
+    npm install --global corepack@latest && \
+    corepack enable pnpm && \
+    pnpm add turbo --global
+ 
 FROM base AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
 
-# Some environment variables must be present at build time (usually the one prefixed with NEXT_PUBLIC_)
-# https://github.com/vercel/next.js/discussions/14030
-# ARG NEXT_PUBLIC_BASE_URL
-# ENV NEXT_PUBLIC_BASE_URL=${NEXT_PUBLIC_BASE_URL}
-
-# Next.js collects completely anonymous telemetry data about general usage.
-# Learn more here: https://nextjs.org/telemetry
-# Uncomment the following line in case you want to disable telemetry during the build.
+ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-ENV COREPACK_INTEGRITY_KEYS=0
+# Set working directory
+WORKDIR /app
 
-RUN \
-  if [ -f yarn.lock ]; then yarn run build; \
-  elif [ -f package-lock.json ]; then npm run build; \
-  elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm run build; \
-  else echo "Lockfile not found." && exit 1; \
-  fi
+# Copy package files
+COPY package.json pnpm-lock.yaml ./
 
-# Production image, copy all the files and run next
+# Install dependencies with pnpm
+RUN pnpm install --frozen-lockfile
+ 
+# Add lockfile and package.json's of isolated subworkspace
+FROM base AS installer
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+ 
+# Copy node_modules from dependencies stage
+COPY --from=dependencies /app/node_modules ./node_modules
+
+# Copy source code
+COPY . .
+
+# Build the application
+RUN pnpm build
+ 
 FROM base AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
-# Uncomment the following line in case you want to disable telemetry during runtime.
 ENV NEXT_TELEMETRY_DISABLED=1
-
+ 
+# Don't run production as root
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
+
+# Copy built application from build stage
+COPY --from=build /app/public ./public
+
+# Set correct permissions for prerender cache
+RUN mkdir .next
+RUN chown nextjs:nodejs .next
+
+# Copy built application with correct ownership
+COPY --from=build --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=build --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# Switch to non-root user
 USER nextjs
-
-COPY --from=builder /app/public ./public
-
-# Automatically leverage output traces to reduce image size
-# https://nextjs.org/docs/advanced-features/output-file-tracing
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-# Copy the fetch-cache from the builder stage to the standalone output
-# ref: https://caching-tools.github.io/next-shared-cache/usage/populating-cache-on-start
-# COPY .next/cache/fetch-cache/ .next/standalone/.next/cache/fetch-cache/
-
-# Environment variables must be redefined at run time on docker-compose.yml
-
-# Note: Don't expose ports here, Compose will handle that for us
-
-# server.js is created by next build from the standalone output
-# https://nextjs.org/docs/pages/api-reference/config/next-config-js/output
+ 
 CMD ["node", "server.js"]

@@ -1,8 +1,72 @@
-Dockerfile
-.dockerignore
+# Dependencies
 node_modules
-docker_data
 npm-debug.log*
-README.md
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Next.js
+.next/
+out/
+build/
+
+# Environment files
+.env*
+!.env.example
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Git
 .git
-.next
+.gitignore
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+docker_data
+
+# Testing
+coverage/
+.nyc_output
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Misc
+*.pem
+*.log
+
+# Documentation
+README.md
+CLAUDE.md
+docs/
+
+
+# Configuration files (keep essential ones)
+!package.json
+!pnpm-lock.yaml
+!next.config.ts
+!tsconfig.json
+!drizzle.config.ts
+!postcss.config.mjs
+!eslint.config.mjs
+!components.json
+!.prettierrc

@@ -1,0 +1,61 @@
+services:
+  postgres:
+    image: postgres:17.6
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./docker_data/postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pgbouncer:
+    image: bitnami/pgbouncer:1.23.1
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy # Wait for postgres to be healthy
+    environment:
+      PGBOUNCER_DATABASE: ${POSTGRES_DB}
+      PGBOUNCER_MAX_CLIENT_CONN: 1000
+      PGBOUNCER_DEFAULT_POOL_SIZE: 20
+      PGBOUNCER_POOL_MODE: session
+      POSTGRESQL_USERNAME: ${POSTGRES_USER}
+      POSTGRESQL_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRESQL_DATABASE: ${POSTGRES_DB}
+      POSTGRESQL_HOST: postgres
+      POSTGRESQL_PORT: 5432
+      # PGBOUNCER_SERVER_TLS_SSLMODE: require # Uncomment and configure if you need TLS between pgbouncer and postgres
+    ports:
+      - "6432:6432"
+    healthcheck:
+      test: 'env PGPASSWORD="${POSTGRES_PASSWORD}" psql -p 6432 -U "${POSTGRES_USER}" pgbouncer -b -c "SHOW USERS" >/dev/null'
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z
+    restart: always
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - ./docker_data/minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
