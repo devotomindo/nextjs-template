@@ -9,7 +9,7 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // check if user is logged in and are an admin
+  // check if user is logged in
   const [session, error] = await authGuard();
 
   if (error || !session) {
