@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/collapsible";
 import {
   SidebarGroup,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -46,7 +45,7 @@ export function DashboardSideNav({
 
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Admin</SidebarGroupLabel>
+      {/* <SidebarGroupLabel>Admin</SidebarGroupLabel> */}
       <SidebarMenu>
         {items.map((item) => {
           const hasSubItems = item.items && item.items.length > 0;

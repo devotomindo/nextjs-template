@@ -405,7 +405,10 @@ export function PostsView() {
                 {table.getHeaderGroups().map((headerGroup) => (
                   <tr key={headerGroup.id}>
                     {headerGroup.headers.map((header) => (
-                      <th key={header.id} className="px-4 py-3">
+                      <th
+                        key={header.id}
+                        className="border-r border-slate-100 px-4 py-3 last:border-r-0"
+                      >
                         {header.isPlaceholder
                           ? null
                           : flexRender(
@@ -417,15 +420,18 @@ export function PostsView() {
                   </tr>
                 ))}
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-slate-100 bg-white">
                 {table.getRowModel().rows?.length ? (
                   table.getRowModel().rows.map((row) => (
                     <tr
                       key={row.id}
-                      className="transition hover:bg-slate-50/70"
+                      className="border-b border-slate-100 transition last:border-b-0 hover:bg-slate-50/70"
                     >
                       {row.getVisibleCells().map((cell) => (
-                        <td key={cell.id} className="px-4 py-4">
+                        <td
+                          key={cell.id}
+                          className="border-r border-slate-100 px-4 py-4 last:border-r-0"
+                        >
                           {flexRender(
                             cell.column.columnDef.cell,
                             cell.getContext(),
