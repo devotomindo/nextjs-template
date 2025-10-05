@@ -68,7 +68,7 @@ export const verificationTable = pgTable("verification", {
 });
 // END OF BETTER-AUTH
 
-export const testsTable = pgTable("tests", {
+export const postsTable = pgTable("posts", {
   id: uuid("id").primaryKey().$defaultFn(uuidv7),
   createdAt: timestamp("created_at", {
     withTimezone: true,
@@ -80,6 +80,6 @@ export const testsTable = pgTable("tests", {
   })
     .notNull()
     .defaultNow(),
-  name: text("name").notNull(),
+  title: text("title").notNull(),
   description: text("description"),
 });

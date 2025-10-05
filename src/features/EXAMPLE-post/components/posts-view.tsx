@@ -43,7 +43,9 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { orpcClient, orpcTanstackQueryUtils } from "@/lib/orpc/client";
+import type { Router } from "@/lib/orpc/router";
 import { zodResolver } from "@hookform/resolvers/zod";
+import type { InferRouterOutputs } from "@orpc/server";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ColumnDef,
@@ -59,125 +61,119 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-type Test = {
-  id: string;
-  createdAt: Date;
-  updatedAt: Date;
-  name: string;
-  description: string | null;
-};
+type Post = InferRouterOutputs<Router>["post"]["listAllPosts"][number];
 
-const testFormSchema = z.object({
-  name: z.string().min(1, "Name is required"),
+const postFormSchema = z.object({
+  title: z.string().min(1, "Title is required"),
   description: z.string().optional(),
 });
 
-export function TestsView() {
+export function PostsView() {
   const [globalFilter, setGlobalFilter] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [selectedTest, setSelectedTest] = useState<Test | null>(null);
-  const [testToDelete, setTestToDelete] = useState<Test | null>(null);
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [postToDelete, setPostToDelete] = useState<Post | null>(null);
 
   const queryClient = useQueryClient();
 
   const {
-    data: tests,
+    data: posts,
     isLoading,
     error,
-  } = useQuery(orpcTanstackQueryUtils.test.listAllTests.queryOptions());
+  } = useQuery(orpcTanstackQueryUtils.post.listAllPosts.queryOptions());
 
-  const createTestMutation = useMutation({
-    mutationFn: (data: z.infer<typeof testFormSchema>) =>
-      orpcClient.test.createTest(data),
+  const createPostMutation = useMutation({
+    mutationFn: (data: z.infer<typeof postFormSchema>) =>
+      orpcClient.post.createPost(data),
     onSuccess: () => {
       queryClient.invalidateQueries(
-        orpcTanstackQueryUtils.test.listAllTests.queryOptions(),
+        orpcTanstackQueryUtils.post.listAllPosts.queryOptions(),
       );
       setIsCreateDialogOpen(false);
       createForm.reset();
     },
   });
 
-  const updateTestMutation = useMutation({
-    mutationFn: (data: { id: string; name: string; description?: string }) =>
-      orpcClient.test.updateTest(data),
+  const updatePostMutation = useMutation({
+    mutationFn: (data: { id: string; title: string; description?: string }) =>
+      orpcClient.post.updatePost(data),
     onSuccess: () => {
       queryClient.invalidateQueries(
-        orpcTanstackQueryUtils.test.listAllTests.queryOptions(),
+        orpcTanstackQueryUtils.post.listAllPosts.queryOptions(),
       );
       setIsEditDialogOpen(false);
-      setSelectedTest(null);
+      setSelectedPost(null);
     },
   });
 
-  const deleteTestMutation = useMutation({
-    mutationFn: (data: { id: string }) => orpcClient.test.deleteTest(data),
+  const deletePostMutation = useMutation({
+    mutationFn: (data: { id: string }) => orpcClient.post.deletePost(data),
     onSuccess: () => {
       queryClient.invalidateQueries(
-        orpcTanstackQueryUtils.test.listAllTests.queryOptions(),
+        orpcTanstackQueryUtils.post.listAllPosts.queryOptions(),
       );
       setIsDeleteDialogOpen(false);
-      setTestToDelete(null);
+      setPostToDelete(null);
     },
   });
 
-  const createForm = useForm<z.infer<typeof testFormSchema>>({
-    resolver: zodResolver(testFormSchema),
+  const createForm = useForm<z.infer<typeof postFormSchema>>({
+    resolver: zodResolver(postFormSchema),
     defaultValues: {
-      name: "",
+      title: "",
       description: "",
     },
   });
 
-  const editForm = useForm<z.infer<typeof testFormSchema>>({
-    resolver: zodResolver(testFormSchema),
+  const editForm = useForm<z.infer<typeof postFormSchema>>({
+    resolver: zodResolver(postFormSchema),
     defaultValues: {
-      name: "",
+      title: "",
       description: "",
     },
   });
 
-  const onCreateSubmit = (values: z.infer<typeof testFormSchema>) => {
-    createTestMutation.mutate(values);
+  const onCreateSubmit = (values: z.infer<typeof postFormSchema>) => {
+    createPostMutation.mutate(values);
   };
 
-  const onEditSubmit = (values: z.infer<typeof testFormSchema>) => {
-    if (selectedTest) {
-      updateTestMutation.mutate({ ...values, id: selectedTest.id });
+  const onEditSubmit = (values: z.infer<typeof postFormSchema>) => {
+    if (selectedPost) {
+      updatePostMutation.mutate({ ...values, id: selectedPost.id });
     }
   };
 
   const handleEditClick = useCallback(
-    (test: Test) => {
-      setSelectedTest(test);
+    (post: Post) => {
+      setSelectedPost(post);
       editForm.reset({
-        name: test.name,
-        description: test.description || "",
+        title: post.title,
+        description: post.description || "",
       });
       setIsEditDialogOpen(true);
     },
     [editForm],
   );
 
-  const handleDeleteClick = useCallback((test: Test) => {
-    setTestToDelete(test);
+  const handleDeleteClick = useCallback((post: Post) => {
+    setPostToDelete(post);
     setIsDeleteDialogOpen(true);
   }, []);
 
   const confirmDelete = () => {
-    if (testToDelete) {
-      deleteTestMutation.mutate({ id: testToDelete.id });
+    if (postToDelete) {
+      deletePostMutation.mutate({ id: postToDelete.id });
     }
   };
 
-  const columns = useMemo<ColumnDef<Test>[]>(
+  const columns = useMemo<ColumnDef<Post>[]>(
     () => [
       {
-        accessorKey: "name",
+        accessorKey: "title",
         header: ({ column }) => (
-          <SortableHeader column={column}>Name</SortableHeader>
+          <SortableHeader column={column}>Title</SortableHeader>
         ),
       },
       {
@@ -214,7 +210,7 @@ export function TestsView() {
         id: "actions",
         header: "Actions",
         cell: ({ row }) => {
-          const test = row.original;
+          const post = row.original;
           return (
             <div className="flex space-x-2">
               <Tooltip>
@@ -222,24 +218,24 @@ export function TestsView() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleEditClick(test)}
+                    onClick={() => handleEditClick(post)}
                   >
                     <EditIcon className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Edit test</TooltipContent>
+                <TooltipContent>Edit post</TooltipContent>
               </Tooltip>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleDeleteClick(test)}
+                    onClick={() => handleDeleteClick(post)}
                   >
                     <TrashIcon className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Delete test</TooltipContent>
+                <TooltipContent>Delete post</TooltipContent>
               </Tooltip>
             </div>
           );
@@ -250,7 +246,7 @@ export function TestsView() {
   );
 
   const tableHook = useReactTable({
-    data: tests || [],
+    data: posts || [],
     columns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -268,14 +264,14 @@ export function TestsView() {
     },
   });
 
-   /**
+  /**
    * do this to prevent React Compiler auto optimize
    * which will cause the table to not re-render after the data is updated
    * ref: https://github.com/TanStack/table/issues/5567
    * ref: https://github.com/TanStack/virtual/issues/743
    */
-  const tableRef = useRef(tableHook)
-  const table = tableRef.current
+  const tableRef = useRef(tableHook);
+  const table = tableRef.current;
 
   return (
     <div className="container mx-auto space-y-4 py-8">
@@ -306,10 +302,10 @@ export function TestsView() {
                 >
                   <FormField
                     control={createForm.control}
-                    name="name"
+                    name="title"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Name</FormLabel>
+                        <FormLabel>Title</FormLabel>
                         <FormControl>
                           <Input placeholder="Enter test name" {...field} />
                         </FormControl>
@@ -343,16 +339,16 @@ export function TestsView() {
                     </Button>
                     <Button
                       type="submit"
-                      disabled={createTestMutation.isPending}
+                      disabled={createPostMutation.isPending}
                     >
-                      {createTestMutation.isPending ? "Creating..." : "Create"}
+                      {createPostMutation.isPending ? "Creating..." : "Create"}
                     </Button>
                   </DialogFooter>
                 </form>
               </Form>
             </DialogContent>
           </Dialog>
-          {!isLoading && !error && tests && tests.length > 0 && (
+          {!isLoading && !error && posts && posts.length > 0 && (
             <>
               <div className="relative">
                 <SearchIcon className="absolute top-2.5 left-2 h-4 w-4 text-gray-400" />
@@ -387,7 +383,7 @@ export function TestsView() {
             Error loading tests: {error.message}
           </div>
         </div>
-      ) : !tests || tests.length === 0 ? (
+      ) : !posts || posts.length === 0 ? (
         <div className="flex h-64 items-center justify-center">
           <div className="text-lg text-gray-600">No tests found</div>
         </div>
@@ -568,10 +564,10 @@ export function TestsView() {
             >
               <FormField
                 control={editForm.control}
-                name="name"
+                name="title"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Name</FormLabel>
+                    <FormLabel>Title</FormLabel>
                     <FormControl>
                       <Input placeholder="Enter test name" {...field} />
                     </FormControl>
@@ -603,8 +599,8 @@ export function TestsView() {
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={updateTestMutation.isPending}>
-                  {updateTestMutation.isPending ? "Updating..." : "Update"}
+                <Button type="submit" disabled={updatePostMutation.isPending}>
+                  {updatePostMutation.isPending ? "Updating..." : "Update"}
                 </Button>
               </DialogFooter>
             </form>
@@ -618,7 +614,7 @@ export function TestsView() {
             <DialogTitle>Are you sure?</DialogTitle>
             <DialogDescription>
               This action cannot be undone. This will permanently delete the
-              test &quot;{testToDelete?.name}&quot;.
+              test &quot;{postToDelete?.title}&quot;.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -626,16 +622,16 @@ export function TestsView() {
               type="button"
               variant="outline"
               onClick={() => setIsDeleteDialogOpen(false)}
-              disabled={deleteTestMutation.isPending}
+              disabled={deletePostMutation.isPending}
             >
               Cancel
             </Button>
             <Button
               onClick={confirmDelete}
               className="bg-destructive hover:bg-destructive/90"
-              disabled={deleteTestMutation.isPending}
+              disabled={deletePostMutation.isPending}
             >
-              {deleteTestMutation.isPending ? "Deleting..." : "Delete"}
+              {deletePostMutation.isPending ? "Deleting..." : "Delete"}
             </Button>
           </DialogFooter>
         </DialogContent>

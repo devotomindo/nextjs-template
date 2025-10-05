@@ -5,15 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1759147646704,
-      "tag": "0000_aspiring_deadpool",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1759149593990,
-      "tag": "0001_ambiguous_the_leader",
+      "when": 1759671614770,
+      "tag": "0000_first_sphinx",
       "breakpoints": true
     }
   ]

@@ -1,25 +1,25 @@
 import { createDrizzleConnection } from "@/db/drizzle/connection";
-import { testsTable } from "@/db/drizzle/schema";
+import { postsTable } from "@/db/drizzle/schema";
 import { os } from "@orpc/server";
 import { z } from "zod";
 
-const createTestSchema = z.object({
-  name: z.string().min(1, "Name is required"),
+const createPostSchema = z.object({
+  title: z.string().min(1, "Title is required"),
   description: z.string().optional(),
 });
 
-export const createTest = os
-  .input(createTestSchema)
+export const createPost = os
+  .input(createPostSchema)
   .handler(async ({ input }) => {
     const db = createDrizzleConnection();
 
-    const [test] = await db
-      .insert(testsTable)
+    const [post] = await db
+      .insert(postsTable)
       .values({
-        name: input.name,
+        title: input.title,
         description: input.description || null,
       })
       .returning();
 
-    return test;
+    return post;
   });

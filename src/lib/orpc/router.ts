@@ -1,7 +1,7 @@
-import testRouter from "@/features/test/routes";
+import postRouter from "@/features/EXAMPLE-post/routes";
 
 export const router = {
-  test: testRouter,
+  post: postRouter,
 };
 
 export type Router = typeof router;

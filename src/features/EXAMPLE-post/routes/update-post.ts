@@ -1,0 +1,33 @@
+import { createDrizzleConnection } from "@/db/drizzle/connection";
+import { postsTable } from "@/db/drizzle/schema";
+import { ORPCError, os } from "@orpc/server";
+import { eq } from "drizzle-orm";
+import { z } from "zod";
+
+const updatePostSchema = z.object({
+  id: z.uuid(),
+  title: z.string().min(1, "Title is required"),
+  description: z.string().optional(),
+});
+
+export const updatePost = os
+  .input(updatePostSchema)
+  .handler(async ({ input }) => {
+    const db = createDrizzleConnection();
+
+    const [post] = await db
+      .update(postsTable)
+      .set({
+        title: input.title,
+        description: input.description || null,
+        updatedAt: new Date(),
+      })
+      .where(eq(postsTable.id, input.id))
+      .returning();
+
+    if (!post) {
+      throw new ORPCError("NOT_FOUND", { message: "Post not found" });
+    }
+
+    return post;
+  });

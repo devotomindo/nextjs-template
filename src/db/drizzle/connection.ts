@@ -14,15 +14,11 @@ const dbDefaultConfig = {
 };
 
 export function createDrizzleConnection(config = dbDefaultConfig) {
-  // if (process.env.NODE_ENV === "production") {
-  // connection = postgres(process.env.SUPABASE_CONNECTION_STRING!, { prepare: false });
-  // } else {
   if (!globalConnection.connection) {
     globalConnection.connection = new Pool({
       connectionString: env.DATABASE_URL,
     });
   }
-  // }
 
   connection = globalConnection.connection;
 
