@@ -20,10 +20,10 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    template: "%s - Ujian Adaptif PUPR",
-    default: "Ujian Adaptif PUPR",
+    template: "%s - NextJS Template",
+    default: "NextJS Template",
   },
-  description: "Ujian Adaptif PUPR",
+  description: "NextJS Template",
 };
 
 export default function RootLayout({
