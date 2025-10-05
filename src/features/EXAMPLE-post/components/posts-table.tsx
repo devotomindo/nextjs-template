@@ -75,7 +75,7 @@ const postFormSchema = z.object({
   description: z.string().optional(),
 });
 
-export function PostsView() {
+export function PostsTable() {
   const [globalFilter, setGlobalFilter] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
