@@ -9,12 +9,10 @@ import {
 import { authClient } from "@/lib/auth/client";
 import { useMutation } from "@tanstack/react-query";
 import { ChevronDownIcon, Loader2, LogOutIcon, UserIcon } from "lucide-react";
-import { usePathname } from "next/navigation";
 import { useRouter } from "nextjs-toploader/app";
 
 export function UserDropdown() {
   const router = useRouter();
-  const pathname = usePathname();
 
   const { data: session } = authClient.useSession();
 

@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 
 export default async function Page() {
   // check if user is logged in
-  const [session, error] = await authGuard();
+  const [session] = await authGuard();
 
   if (session) {
     redirect("/dashboard");

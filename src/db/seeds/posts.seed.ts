@@ -75,7 +75,7 @@ export async function seedPosts() {
   await db.delete(postsTable);
   console.log("✅ Existing posts deleted!");
 
-  const posts = Array.from({ length: 1000 }, (_, i) => ({
+  const posts = Array.from({ length: 1000 }, () => ({
     title: generateRandomTitle(),
     description: getRandomElement(descriptions),
   }));
