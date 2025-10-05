@@ -1,11 +1,11 @@
-// import seedServices from "./services.seed";
-import seedPosts from "./posts.seed";
+import { seedAccount } from "./account.seed";
+import { seedPosts } from "./posts.seed";
 
 async function runAllSeeds() {
   console.log("🌱 Starting database seeding...");
 
   try {
-    // await seedServices();
+    await seedAccount();
     await seedPosts();
 
     console.log("🎉 All seeds completed successfully!");

@@ -67,7 +67,7 @@ function generateRandomTitle(): string {
   return variation > 0 ? `${baseTitle} (Part ${variation})` : baseTitle;
 }
 
-async function seedPosts() {
+export async function seedPosts() {
   console.log("🌱 Seeding posts...");
 
   // Delete all existing posts
@@ -85,10 +85,10 @@ async function seedPosts() {
   for (let i = 0; i < posts.length; i += batchSize) {
     const batch = posts.slice(i, i + batchSize);
     await db.insert(postsTable).values(batch);
-    console.log(`✅ Inserted posts ${i + 1} to ${Math.min(i + batchSize, posts.length)}`);
+    console.log(
+      `✅ Inserted posts ${i + 1} to ${Math.min(i + batchSize, posts.length)}`,
+    );
   }
 
   console.log("✅ Posts seeding completed!");
 }
-
-export default seedPosts;
