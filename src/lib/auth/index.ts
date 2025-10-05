@@ -49,3 +49,5 @@ export const auth = betterAuth({
     nextCookies(), // make sure this is the last plugin in the array
   ],
 });
+
+export type Auth = typeof auth;
