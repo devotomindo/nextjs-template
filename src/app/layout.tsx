@@ -40,9 +40,7 @@ export default function RootLayout({
         <NextTopLoader />
 
         <TanstackQueryProvider>
-          <div className="min-h-dvh">
-            <main className="mx-auto max-w-7xl px-4 py-6">{children}</main>
-          </div>
+          <main className="min-h-dvh">{children}</main>
 
           <Toaster position="top-right" richColors closeButton theme="light" />
         </TanstackQueryProvider>

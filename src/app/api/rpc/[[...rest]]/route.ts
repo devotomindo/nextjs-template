@@ -1,12 +1,19 @@
 import { router } from "@/lib/orpc/router";
 import { RPCHandler } from "@orpc/server/fetch";
+import { RequestHeadersPlugin } from "@orpc/server/plugins";
 
-const handler = new RPCHandler(router);
+const handler = new RPCHandler(router, {
+  plugins: [new RequestHeadersPlugin()],
+});
 
 async function handleRequest(request: Request) {
   const { response } = await handler.handle(request, {
     prefix: "/api/rpc",
-    context: {}, // Provide initial context if needed
+    context: {
+      reqHeaders: request.headers,
+      user: null,
+      session: null,
+    },
   });
 
   return response ?? new Response("Not found", { status: 404 });

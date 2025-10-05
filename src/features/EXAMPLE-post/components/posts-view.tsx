@@ -274,7 +274,7 @@ export function PostsView() {
   const table = tableRef.current;
 
   return (
-    <div className="container mx-auto space-y-4 py-8">
+    <div className="space-y-4 px-4 py-8">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold">All Tests</h2>
         <div className="flex items-center space-x-2">
@@ -353,7 +353,7 @@ export function PostsView() {
               <div className="relative">
                 <SearchIcon className="absolute top-2.5 left-2 h-4 w-4 text-gray-400" />
                 <Input
-                  placeholder="Search all columns..."
+                  placeholder="Search"
                   value={globalFilter}
                   onChange={(e) => setGlobalFilter(e.target.value)}
                   className="w-64 pl-8"
@@ -614,7 +614,11 @@ export function PostsView() {
             <DialogTitle>Are you sure?</DialogTitle>
             <DialogDescription>
               This action cannot be undone. This will permanently delete the
-              test &quot;{postToDelete?.title}&quot;.
+              test{" "}
+              <span className="font-bold">
+                &quot;{postToDelete?.title}&quot;
+              </span>
+              .
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
