@@ -53,7 +53,7 @@ Example: `src/features/EXAMPLE-post/` demonstrates the pattern.
 1. **Define routes** in `src/features/[feature]/routes/`:
    ```typescript
    import { os } from "@orpc/server";
-   import { z } from "zod";
+   import * as z from "zod";
 
    export const createPost = os
      .input(z.object({ title: z.string() }))

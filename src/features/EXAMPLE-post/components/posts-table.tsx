@@ -66,7 +66,7 @@ import {
 import { EditIcon, PlusIcon, SearchIcon, TrashIcon, XIcon } from "lucide-react";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
+import * as z from "zod";
 
 type Post = InferRouterOutputs<Router>["post"]["listAllPosts"][number];
 

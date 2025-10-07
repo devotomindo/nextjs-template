@@ -315,7 +315,7 @@ See `src/features/EXAMPLE-post/` for a complete example.
 
    ```typescript
    import { os } from "@orpc/server";
-   import { z } from "zod";
+   import * as z from "zod";
 
    export const createPost = os
      .input(z.object({ title: z.string() }))

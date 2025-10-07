@@ -3,7 +3,7 @@ import { postsTable } from "@/db/drizzle/schema";
 import { authProcedure } from "@/lib/orpc/auth/auth-procedure";
 import { ORPCError } from "@orpc/server";
 import { eq } from "drizzle-orm";
-import { z } from "zod";
+import * as z from "zod";
 
 const updatePostSchema = z.object({
   id: z.uuid(),

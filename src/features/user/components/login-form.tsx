@@ -31,7 +31,7 @@ import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { z } from "zod";
+import * as z from "zod";
 
 const loginSchema = z.object({
   email: z.string().min(1, "Email is required").email({

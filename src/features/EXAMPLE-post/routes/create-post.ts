@@ -1,7 +1,7 @@
 import { createDrizzleConnection } from "@/db/drizzle/connection";
 import { postsTable } from "@/db/drizzle/schema";
 import { authProcedure } from "@/lib/orpc/auth/auth-procedure";
-import { z } from "zod";
+import * as z from "zod";
 
 const createPostSchema = z.object({
   title: z.string().min(1, "Title is required"),
