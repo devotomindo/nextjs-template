@@ -399,15 +399,15 @@ export function PostsTable() {
         </div>
       ) : (
         <>
-          <div className="rounded-md border">
-            <table className="w-full">
-              <thead className="border-y border-slate-100 bg-slate-50 text-left text-xs tracking-wide text-slate-500 uppercase">
+          <div className="overflow-x-auto">
+            <table className="min-w-full border-collapse rounded-md border border-gray-200 shadow-sm">
+              <thead>
                 {table.getHeaderGroups().map((headerGroup) => (
-                  <tr key={headerGroup.id}>
+                  <tr key={headerGroup.id} className="bg-muted/60 border-b">
                     {headerGroup.headers.map((header) => (
                       <th
                         key={header.id}
-                        className="border-r border-slate-100 px-4 py-3 last:border-r-0"
+                        className="border border-gray-200 px-4 py-2 text-left text-xs font-semibold tracking-wider uppercase"
                       >
                         {header.isPlaceholder
                           ? null
@@ -420,17 +420,17 @@ export function PostsTable() {
                   </tr>
                 ))}
               </thead>
-              <tbody className="divide-y divide-slate-100 bg-white">
+              <tbody className="divide-border bg-background divide-y">
                 {table.getRowModel().rows?.length ? (
                   table.getRowModel().rows.map((row) => (
                     <tr
                       key={row.id}
-                      className="border-b border-slate-100 transition last:border-b-0 hover:bg-slate-50/70"
+                      className="hover:bg-muted/50 bg-background transition-colors"
                     >
                       {row.getVisibleCells().map((cell) => (
                         <td
                           key={cell.id}
-                          className="border-r border-slate-100 px-4 py-4 last:border-r-0"
+                          className="border border-gray-200 px-4 py-2"
                         >
                           {flexRender(
                             cell.column.columnDef.cell,
@@ -444,9 +444,19 @@ export function PostsTable() {
                   <tr>
                     <td
                       colSpan={columns.length}
-                      className="h-24 text-center text-gray-500"
+                      className="h-32 border border-gray-200 text-center"
                     >
-                      No results found.
+                      <div className="flex flex-col items-center justify-center space-y-3">
+                        <div>
+                          <p className="text-muted-foreground text-sm font-medium">
+                            No results found
+                          </p>
+                          <p className="text-muted-foreground text-xs">
+                            Try adjusting your search to find what you&apos;re
+                            looking for.
+                          </p>
+                        </div>
+                      </div>
                     </td>
                   </tr>
                 )}
