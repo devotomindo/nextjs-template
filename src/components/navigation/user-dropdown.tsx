@@ -7,12 +7,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { authClient } from "@/lib/auth/client";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ChevronDownIcon, Loader2, LogOutIcon, UserIcon } from "lucide-react";
 import { useRouter } from "nextjs-toploader/app";
 
 export function UserDropdown() {
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const { data: session } = authClient.useSession();
 
@@ -21,6 +22,8 @@ export function UserDropdown() {
       await authClient.signOut({
         fetchOptions: {
           onSuccess: () => {
+            // Clear all TanStack Query cache on logout
+            queryClient.clear();
             router.push("/");
           },
         },

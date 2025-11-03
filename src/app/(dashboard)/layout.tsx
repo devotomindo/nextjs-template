@@ -1,5 +1,5 @@
-import { DashboardSidebar } from "@/components/dashboard-sidebar";
-import { DashboardTopNavbar } from "@/components/dashboard-top-navbar";
+import { AdminNavbar } from "@/components/navigation/admin-navbar";
+import { AdminSidebar } from "@/components/navigation/admin-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { authGuard } from "@/features/user/guards/auth-guard";
 import { redirect } from "next/navigation";
@@ -18,9 +18,9 @@ export default async function AdminLayout({
 
   return (
     <SidebarProvider>
-      <DashboardSidebar />
+      <AdminSidebar />
       <SidebarInset>
-        <DashboardTopNavbar />
+        <AdminNavbar />
         {children}
       </SidebarInset>
     </SidebarProvider>

@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/collapsible";
 import {
   SidebarGroup,
+  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -20,20 +21,38 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
-export function DashboardSideNav({
-  items,
-}: {
+export type SidebarItem = {
+  label?: string;
   items: {
     title: string;
     url: string;
     icon?: LucideIcon;
     isActive?: boolean;
+    activeMatch?: "startsWith" | "exact";
     items?: {
       title: string;
       url: string;
+      activeMatch?: "startsWith" | "exact";
     }[];
   }[];
-}) {
+};
+
+const SidebarTopLevel = ({
+  label,
+  children,
+}: {
+  label?: string;
+  children: React.ReactNode;
+}) => {
+  return (
+    <>
+      {label ? <SidebarGroupLabel>{label}</SidebarGroupLabel> : null}
+      <SidebarMenu>{children}</SidebarMenu>
+    </>
+  );
+};
+
+export function SideNav({ items }: { items: SidebarItem[] }) {
   const { isMobile, setOpenMobile } = useSidebar();
   const pathname = usePathname();
 
@@ -43,21 +62,27 @@ export function DashboardSideNav({
     }
   };
 
+  const checkIsActive = (url: string, activeMatch?: "startsWith" | "exact") => {
+    const matchType = activeMatch ?? "startsWith";
+    return matchType === "exact" ? pathname === url : pathname.startsWith(url);
+  };
+
   return (
     <SidebarGroup>
-      {/* <SidebarGroupLabel>Admin</SidebarGroupLabel> */}
-      <SidebarMenu>
-        {items.map((item) => {
-          const hasSubItems = item.items && item.items.length > 0;
-          const isMenuActive = pathname.startsWith(item.url);
+      {items.map((item, index) => {
+        const menu = item.items.map((item2) => {
+          const hasSubItems = item2.items && item2.items.length > 0;
+          const isMenuActive = checkIsActive(item2.url, item2.activeMatch);
           const isSubItemActive =
             hasSubItems &&
-            item.items?.some((subItem) => pathname.startsWith(subItem.url));
+            item2.items?.some((subItem) =>
+              checkIsActive(subItem.url, subItem.activeMatch),
+            );
           const shouldOpenCollapsible = isMenuActive || isSubItemActive;
 
           return hasSubItems ? (
             <Collapsible
-              key={item.title}
+              key={item2.title}
               asChild
               defaultOpen={shouldOpenCollapsible}
               className="group/collapsible"
@@ -65,21 +90,24 @@ export function DashboardSideNav({
               <SidebarMenuItem>
                 <CollapsibleTrigger asChild>
                   <SidebarMenuButton
-                    tooltip={item.title}
+                    tooltip={item2.title}
                     isActive={isMenuActive}
                   >
-                    {item.icon && <item.icon />}
-                    <span>{item.title}</span>
+                    {item2.icon && <item2.icon />}
+                    <span>{item2.title}</span>
                     <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                   </SidebarMenuButton>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <SidebarMenuSub>
-                    {item.items?.map((subItem) => (
+                    {item2.items?.map((subItem) => (
                       <SidebarMenuSubItem key={subItem.title}>
                         <SidebarMenuSubButton
                           asChild
-                          isActive={pathname.startsWith(subItem.url)}
+                          isActive={checkIsActive(
+                            subItem.url,
+                            subItem.activeMatch,
+                          )}
                         >
                           <Link
                             href={subItem.url as any}
@@ -95,21 +123,27 @@ export function DashboardSideNav({
               </SidebarMenuItem>
             </Collapsible>
           ) : (
-            <SidebarMenuItem key={item.title}>
+            <SidebarMenuItem key={item2.title}>
               <SidebarMenuButton
                 asChild
-                tooltip={item.title}
+                tooltip={item2.title}
                 isActive={isMenuActive}
               >
-                <Link href={item.url as any} onClick={handleLinkClick}>
-                  {item.icon && <item.icon />}
-                  <span>{item.title}</span>
+                <Link href={item2.url as any} onClick={handleLinkClick}>
+                  {item2.icon && <item2.icon />}
+                  <span>{item2.title}</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           );
-        })}
-      </SidebarMenu>
+        });
+
+        return (
+          <SidebarTopLevel key={item.label ?? index} label={item.label}>
+            {menu}
+          </SidebarTopLevel>
+        );
+      })}
     </SidebarGroup>
   );
 }

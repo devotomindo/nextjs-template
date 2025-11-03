@@ -9,7 +9,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -20,12 +19,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupButton,
-  InputGroupInput,
-} from "@/components/ui/input-group";
 import {
   Pagination,
   PaginationContent,
@@ -63,9 +56,18 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { EditIcon, PlusIcon, SearchIcon, TrashIcon, XIcon } from "lucide-react";
+import {
+  AlertTriangle,
+  EditIcon,
+  FileText,
+  Loader2,
+  PlusIcon,
+  SearchIcon,
+  TrashIcon,
+} from "lucide-react";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import * as z from "zod";
 
 type Post = InferRouterOutputs<Router>["post"]["listAllPosts"][number];
@@ -95,11 +97,17 @@ export function PostsTable() {
     mutationFn: (data: z.infer<typeof postFormSchema>) =>
       orpcClient.post.createPost(data),
     onSuccess: () => {
+      toast.success("Post created successfully");
       queryClient.invalidateQueries(
         orpcTanstackQueryUtils.post.listAllPosts.queryOptions(),
       );
       setIsCreateDialogOpen(false);
       createForm.reset();
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to create post",
+      );
     },
   });
 
@@ -107,22 +115,34 @@ export function PostsTable() {
     mutationFn: (data: { id: string; title: string; description?: string }) =>
       orpcClient.post.updatePost(data),
     onSuccess: () => {
+      toast.success("Post updated successfully");
       queryClient.invalidateQueries(
         orpcTanstackQueryUtils.post.listAllPosts.queryOptions(),
       );
       setIsEditDialogOpen(false);
       setSelectedPost(null);
     },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to update post",
+      );
+    },
   });
 
   const deletePostMutation = useMutation({
     mutationFn: (data: { id: string }) => orpcClient.post.deletePost(data),
     onSuccess: () => {
+      toast.success("Post deleted successfully");
       queryClient.invalidateQueries(
         orpcTanstackQueryUtils.post.listAllPosts.queryOptions(),
       );
       setIsDeleteDialogOpen(false);
       setPostToDelete(null);
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to delete post",
+      );
     },
   });
 
@@ -182,49 +202,74 @@ export function PostsTable() {
         header: ({ column }) => (
           <SortableHeader column={column}>Title</SortableHeader>
         ),
-      },
-      {
-        accessorKey: "description",
-        header: ({ column }) => (
-          <SortableHeader column={column}>Description</SortableHeader>
+        cell: ({ row }) => (
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50">
+              <FileText className="h-5 w-5 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-900">
+                {row.original.title}
+              </p>
+              {row.original.description && (
+                <p className="mt-1 line-clamp-1 text-xs text-slate-500">
+                  {row.original.description}
+                </p>
+              )}
+            </div>
+          </div>
         ),
-        cell: ({ getValue }) => {
-          const value = getValue() as string | null;
-          return value || <span className="text-gray-400">No description</span>;
-        },
       },
       {
         accessorKey: "createdAt",
         header: ({ column }) => (
-          <SortableHeader column={column}>Created At</SortableHeader>
+          <SortableHeader column={column}>Created</SortableHeader>
         ),
         cell: ({ getValue }) => {
           const date = getValue() as Date;
-          return date.toLocaleDateString() + " " + date.toLocaleTimeString();
+          return (
+            <span className="text-sm text-slate-600">
+              {date.toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+              })}
+            </span>
+          );
         },
+        sortingFn: "datetime",
       },
       {
         accessorKey: "updatedAt",
         header: ({ column }) => (
-          <SortableHeader column={column}>Updated At</SortableHeader>
+          <SortableHeader column={column}>Updated</SortableHeader>
         ),
         cell: ({ getValue }) => {
           const date = getValue() as Date;
-          return date.toLocaleDateString() + " " + date.toLocaleTimeString();
+          return (
+            <span className="text-sm text-slate-600">
+              {date.toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+              })}
+            </span>
+          );
         },
+        sortingFn: "datetime",
       },
       {
         id: "actions",
-        header: "Actions",
+        header: () => <div className="text-right">Actions</div>,
         cell: ({ row }) => {
           const post = row.original;
           return (
-            <div className="flex space-x-2">
+            <div className="flex justify-end space-x-2">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
                     variant="outline"
-                    size="sm"
+                    size="icon"
                     onClick={() => handleEditClick(post)}
                   >
                     <EditIcon className="h-4 w-4" />
@@ -236,7 +281,7 @@ export function PostsTable() {
                 <TooltipTrigger asChild>
                   <Button
                     variant="outline"
-                    size="sm"
+                    size="icon"
                     onClick={() => handleDeleteClick(post)}
                   >
                     <TrashIcon className="h-4 w-4" />
@@ -284,301 +329,302 @@ export function PostsTable() {
   const table = tableRef.current;
 
   return (
-    <div className="space-y-4 px-4 py-8">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">All Tests</h2>
-        <div className="flex items-center space-x-2">
-          <Dialog
-            open={isCreateDialogOpen}
-            onOpenChange={setIsCreateDialogOpen}
+    <div className="flex flex-col gap-4 p-4">
+      <header className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-xs sm:flex-row sm:items-center sm:justify-between sm:p-6">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-xl font-bold text-gray-900 sm:text-2xl lg:text-3xl">
+            Posts
+          </h1>
+          <p className="mt-1 text-sm text-gray-600 sm:mt-2">
+            Manage your blog posts and content.
+          </p>
+        </div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-3">
+          <Button
+            size="default"
+            onClick={() => setIsCreateDialogOpen(true)}
+            className="w-full sm:w-auto"
           >
-            <DialogTrigger asChild>
-              <Button>
-                <PlusIcon className="mr-2 h-4 w-4" />
-                Add Test
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Create New Test</DialogTitle>
-                <DialogDescription>
-                  Add a new test to your collection.
-                </DialogDescription>
-              </DialogHeader>
-              <Form {...createForm}>
-                <form
-                  onSubmit={createForm.handleSubmit(onCreateSubmit)}
-                  className="space-y-4"
-                >
-                  <FormField
-                    control={createForm.control}
-                    name="title"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Title</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter test name" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={createForm.control}
-                    name="description"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Description</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Enter test description (optional)"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <DialogFooter>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setIsCreateDialogOpen(false)}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      type="submit"
-                      disabled={createPostMutation.isPending}
-                    >
-                      {createPostMutation.isPending ? "Creating..." : "Create"}
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
-          {!isLoading && !error && posts && posts.length > 0 && (
-            <InputGroup className="w-64">
-              <InputGroupAddon align="inline-start">
-                <SearchIcon />
-              </InputGroupAddon>
-              <InputGroupInput
-                placeholder="Search"
-                value={globalFilter}
-                onChange={(e) => setGlobalFilter(e.target.value)}
-              />
-              {globalFilter && (
-                <InputGroupAddon align="inline-end">
-                  <InputGroupButton
-                    size="icon-xs"
-                    onClick={() => setGlobalFilter("")}
-                  >
-                    <XIcon />
-                  </InputGroupButton>
-                </InputGroupAddon>
-              )}
-            </InputGroup>
-          )}
+            <PlusIcon className="mr-2 h-4 w-4" /> New Post
+          </Button>
         </div>
-      </div>
+      </header>
 
-      {isLoading ? (
-        <div className="flex h-64 items-center justify-center">
-          <div className="text-lg text-gray-600">Loading tests...</div>
-        </div>
-      ) : error ? (
-        <div className="flex h-64 items-center justify-center">
-          <div className="text-lg text-red-600">
-            Error loading tests: {error.message}
+      <section className="rounded-xl border border-slate-200 bg-white shadow-xs">
+        <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+          <div />
+          <div className="relative w-full sm:max-w-md sm:flex-1 lg:max-w-lg">
+            <SearchIcon className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <Input
+              placeholder="Search posts..."
+              value={globalFilter}
+              onChange={(event) => setGlobalFilter(event.target.value)}
+              className="w-full pl-9"
+            />
           </div>
         </div>
-      ) : !posts || posts.length === 0 ? (
-        <div className="flex h-64 items-center justify-center">
-          <div className="text-lg text-gray-600">No tests found</div>
-        </div>
-      ) : (
-        <>
-          <div className="overflow-x-auto">
-            <table className="min-w-full border-collapse rounded-md border border-gray-200 shadow-sm">
-              <thead>
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <tr key={headerGroup.id} className="bg-muted/60 border-b">
-                    {headerGroup.headers.map((header) => (
-                      <th
-                        key={header.id}
-                        className="border border-gray-200 px-4 py-2 text-left text-xs font-semibold tracking-wider uppercase"
-                      >
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext(),
-                            )}
-                      </th>
-                    ))}
-                  </tr>
-                ))}
-              </thead>
-              <tbody className="divide-border bg-background divide-y">
-                {table.getRowModel().rows?.length ? (
-                  table.getRowModel().rows.map((row) => (
-                    <tr
-                      key={row.id}
-                      className="hover:bg-muted/50 bg-background transition-colors"
-                    >
-                      {row.getVisibleCells().map((cell) => (
-                        <td
-                          key={cell.id}
-                          className="border border-gray-200 px-4 py-2"
-                        >
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext(),
+
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="border-y border-slate-100 bg-slate-50 text-left text-xs tracking-wide text-slate-500 uppercase">
+              {table.getHeaderGroups().map((headerGroup) => (
+                <tr key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <th key={header.id} className="px-4 py-3 sm:px-6">
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext(),
                           )}
-                        </td>
-                      ))}
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td
-                      colSpan={columns.length}
-                      className="h-32 border border-gray-200 text-center"
-                    >
-                      <div className="flex flex-col items-center justify-center space-y-3">
-                        <div>
-                          <p className="text-muted-foreground text-sm font-medium">
-                            No results found
-                          </p>
-                          <p className="text-muted-foreground text-xs">
-                            Try adjusting your search to find what you&apos;re
-                            looking for.
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center justify-between text-sm text-gray-600">
-              <div>
-                Showing{" "}
-                {table.getState().pagination.pageIndex *
-                  table.getState().pagination.pageSize +
-                  1}{" "}
-                to{" "}
-                {Math.min(
-                  (table.getState().pagination.pageIndex + 1) *
-                    table.getState().pagination.pageSize,
-                  table.getFilteredRowModel().rows.length,
-                )}{" "}
-                of {table.getFilteredRowModel().rows.length} test(s)
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <div className="flex items-center space-x-2">
-                <span className="text-sm whitespace-nowrap text-gray-600">
-                  Rows per page:
-                </span>
-                <Select
-                  value={`${table.getState().pagination.pageSize}`}
-                  onValueChange={(value) => {
-                    table.setPageSize(Number(value));
-                  }}
-                >
-                  <SelectTrigger className="h-9 w-[70px]">
-                    <SelectValue
-                      placeholder={table.getState().pagination.pageSize}
-                    />
-                  </SelectTrigger>
-                  <SelectContent side="top">
-                    {[5, 10, 20, 30, 40, 50].map((pageSize) => (
-                      <SelectItem key={pageSize} value={`${pageSize}`}>
-                        {pageSize}
-                      </SelectItem>
+                    </th>
+                  ))}
+                </tr>
+              ))}
+            </thead>
+            <tbody className="divide-y divide-slate-100 bg-white">
+              {isLoading ? (
+                <tr>
+                  <td
+                    colSpan={columns.length}
+                    className="px-4 py-16 text-center text-sm text-slate-500 sm:px-6 sm:py-20"
+                  >
+                    <div className="flex flex-col items-center gap-3">
+                      <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+                      Loading posts...
+                    </div>
+                  </td>
+                </tr>
+              ) : error ? (
+                <tr>
+                  <td
+                    colSpan={columns.length}
+                    className="px-4 py-16 text-center text-sm text-red-600 sm:px-6 sm:py-20"
+                  >
+                    <div className="flex flex-col items-center gap-3">
+                      <AlertTriangle className="h-6 w-6" />
+                      Error loading posts: {error.message}
+                    </div>
+                  </td>
+                </tr>
+              ) : table.getRowModel().rows.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={columns.length}
+                    className="px-4 py-16 text-center text-sm text-slate-500 sm:px-6 sm:py-20"
+                  >
+                    {globalFilter
+                      ? "No posts match your search. Try adjusting your search terms."
+                      : "No posts yet. Create your first post to get started."}
+                  </td>
+                </tr>
+              ) : (
+                table.getRowModel().rows.map((row) => (
+                  <tr key={row.id} className="transition hover:bg-slate-50/70">
+                    {row.getVisibleCells().map((cell) => (
+                      <td key={cell.id} className="px-4 py-4 sm:px-6">
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
+                      </td>
                     ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <Pagination>
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious
-                      onClick={() => table.previousPage()}
-                      size="default"
-                      className={
-                        !table.getCanPreviousPage()
-                          ? "pointer-events-none opacity-50"
-                          : "cursor-pointer"
-                      }
-                    />
-                  </PaginationItem>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
 
-                  {Array.from({ length: table.getPageCount() }, (_, i) => {
-                    const pageNumber = i + 1;
-                    const currentPage =
-                      table.getState().pagination.pageIndex + 1;
-
-                    if (
-                      pageNumber === 1 ||
-                      pageNumber === table.getPageCount() ||
-                      (pageNumber >= currentPage - 1 &&
-                        pageNumber <= currentPage + 1)
-                    ) {
-                      return (
-                        <PaginationItem key={pageNumber}>
-                          <PaginationLink
-                            onClick={() => table.setPageIndex(i)}
-                            isActive={pageNumber === currentPage}
-                            size="icon"
-                            className="cursor-pointer"
-                          >
-                            {pageNumber}
-                          </PaginationLink>
-                        </PaginationItem>
-                      );
-                    } else if (
-                      pageNumber === currentPage - 2 ||
-                      pageNumber === currentPage + 2
-                    ) {
-                      return (
-                        <PaginationItem key={pageNumber}>
-                          <PaginationEllipsis />
-                        </PaginationItem>
-                      );
-                    }
-                    return null;
-                  })}
-
-                  <PaginationItem>
-                    <PaginationNext
-                      onClick={() => table.nextPage()}
-                      size="default"
-                      className={
-                        !table.getCanNextPage()
-                          ? "pointer-events-none opacity-50"
-                          : "cursor-pointer"
-                      }
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-            </div>
+        <div className="flex flex-col gap-4 border-t border-slate-100 p-4 lg:flex-row lg:items-center lg:justify-between lg:p-6">
+          <div className="text-center text-sm text-gray-600 lg:text-left">
+            Showing{" "}
+            {table.getState().pagination.pageIndex *
+              table.getState().pagination.pageSize +
+              1}{" "}
+            -{" "}
+            {Math.min(
+              (table.getState().pagination.pageIndex + 1) *
+                table.getState().pagination.pageSize,
+              table.getFilteredRowModel().rows.length,
+            )}{" "}
+            of {table.getFilteredRowModel().rows.length} post
+            {table.getFilteredRowModel().rows.length !== 1 ? "s" : ""}
           </div>
-        </>
-      )}
+
+          <div className="flex flex-col items-center gap-3 lg:flex-row lg:gap-2">
+            <div className="flex items-center gap-2">
+              <span className="text-sm whitespace-nowrap text-gray-600">
+                Rows per page:
+              </span>
+              <Select
+                value={`${table.getState().pagination.pageSize}`}
+                onValueChange={(value) => {
+                  table.setPageSize(Number(value));
+                }}
+              >
+                <SelectTrigger className="h-9 w-[70px]">
+                  <SelectValue
+                    placeholder={table.getState().pagination.pageSize}
+                  />
+                </SelectTrigger>
+                <SelectContent side="top">
+                  {[5, 10, 20, 30, 40, 50].map((pageSize) => (
+                    <SelectItem key={pageSize} value={`${pageSize}`}>
+                      {pageSize}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Pagination>
+              <PaginationContent className="flex-wrap">
+                <PaginationItem>
+                  <PaginationPrevious
+                    onClick={() => table.previousPage()}
+                    size="default"
+                    className={
+                      !table.getCanPreviousPage()
+                        ? "pointer-events-none opacity-50"
+                        : "cursor-pointer"
+                    }
+                  />
+                </PaginationItem>
+
+                {Array.from({ length: table.getPageCount() }, (_, i) => {
+                  const pageNumber = i + 1;
+                  const currentPage = table.getState().pagination.pageIndex + 1;
+
+                  if (
+                    pageNumber === 1 ||
+                    pageNumber === table.getPageCount() ||
+                    (pageNumber >= currentPage - 1 &&
+                      pageNumber <= currentPage + 1)
+                  ) {
+                    return (
+                      <PaginationItem key={pageNumber}>
+                        <PaginationLink
+                          onClick={() => table.setPageIndex(i)}
+                          isActive={pageNumber === currentPage}
+                          size="icon"
+                          className="cursor-pointer"
+                        >
+                          {pageNumber}
+                        </PaginationLink>
+                      </PaginationItem>
+                    );
+                  } else if (
+                    pageNumber === currentPage - 2 ||
+                    pageNumber === currentPage + 2
+                  ) {
+                    return (
+                      <PaginationItem key={pageNumber}>
+                        <PaginationEllipsis />
+                      </PaginationItem>
+                    );
+                  }
+                  return null;
+                })}
+
+                <PaginationItem>
+                  <PaginationNext
+                    onClick={() => table.nextPage()}
+                    size="default"
+                    className={
+                      !table.getCanNextPage()
+                        ? "pointer-events-none opacity-50"
+                        : "cursor-pointer"
+                    }
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
+        </div>
+      </section>
+
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">
+              Create New Post
+            </DialogTitle>
+            <DialogDescription>
+              Add a new post to your collection.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...createForm}>
+            <form
+              onSubmit={createForm.handleSubmit(onCreateSubmit)}
+              className="space-y-4"
+            >
+              <FormField
+                control={createForm.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Title</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter post title" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={createForm.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description (Optional)</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Enter post description"
+                        className="min-h-[100px]"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter className="gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsCreateDialogOpen(false)}
+                  disabled={createPostMutation.isPending}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={createPostMutation.isPending}
+                  className="min-w-[100px]"
+                >
+                  {createPostMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      <PlusIcon className="mr-2 h-4 w-4" />
+                      Create
+                    </>
+                  )}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Edit Test</DialogTitle>
-            <DialogDescription>Update the test information.</DialogDescription>
+            <DialogTitle className="text-xl font-bold">Edit Post</DialogTitle>
+            <DialogDescription>Update the post information.</DialogDescription>
           </DialogHeader>
           <Form {...editForm}>
             <form
@@ -592,7 +638,7 @@ export function PostsTable() {
                   <FormItem>
                     <FormLabel>Title</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter test name" {...field} />
+                      <Input placeholder="Enter post title" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -603,10 +649,11 @@ export function PostsTable() {
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Description</FormLabel>
+                    <FormLabel>Description (Optional)</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Enter test description (optional)"
+                        placeholder="Enter post description"
+                        className="min-h-[100px]"
                         {...field}
                       />
                     </FormControl>
@@ -614,16 +661,31 @@ export function PostsTable() {
                   </FormItem>
                 )}
               />
-              <DialogFooter>
+              <DialogFooter className="gap-2">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => setIsEditDialogOpen(false)}
+                  disabled={updatePostMutation.isPending}
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={updatePostMutation.isPending}>
-                  {updatePostMutation.isPending ? "Updating..." : "Update"}
+                <Button
+                  type="submit"
+                  disabled={updatePostMutation.isPending}
+                  className="min-w-[100px]"
+                >
+                  {updatePostMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Updating...
+                    </>
+                  ) : (
+                    <>
+                      <EditIcon className="mr-2 h-4 w-4" />
+                      Update
+                    </>
+                  )}
                 </Button>
               </DialogFooter>
             </form>
@@ -632,21 +694,52 @@ export function PostsTable() {
       </Dialog>
 
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Are you sure?</DialogTitle>
-            <DialogDescription>
-              This action cannot be undone. This will permanently delete the
-              test{" "}
-              <span className="font-bold">
-                &quot;{postToDelete?.title}&quot;
-              </span>
-              .
-            </DialogDescription>
+        <DialogContent className="max-w-lg">
+          <DialogHeader className="space-y-3">
+            <div className="flex items-start gap-4">
+              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100">
+                <AlertTriangle className="h-6 w-6 text-red-600" />
+              </div>
+              <div className="flex-1 space-y-1">
+                <DialogTitle className="text-xl">Delete Post?</DialogTitle>
+                <DialogDescription className="text-sm">
+                  This action cannot be undone. The post will be permanently
+                  deleted.
+                </DialogDescription>
+              </div>
+            </div>
           </DialogHeader>
-          <DialogFooter>
+
+          <div className="space-y-4">
+            <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-4">
+              <div className="space-y-2">
+                <p className="text-xs font-medium tracking-wide text-slate-500 uppercase">
+                  Post to be deleted
+                </p>
+                <p className="text-base font-semibold text-gray-900">
+                  {postToDelete?.title || "-"}
+                </p>
+                {postToDelete?.description && (
+                  <p className="text-sm text-slate-600">
+                    {postToDelete.description}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-red-200 bg-red-50 p-3.5">
+              <div className="flex gap-3">
+                <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-600" />
+                <p className="text-sm text-red-900">
+                  This will permanently delete the post and all associated data.
+                  This action cannot be undone.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2">
             <Button
-              type="button"
               variant="outline"
               onClick={() => setIsDeleteDialogOpen(false)}
               disabled={deletePostMutation.isPending}
@@ -654,13 +747,24 @@ export function PostsTable() {
               Cancel
             </Button>
             <Button
+              variant="destructive"
               onClick={confirmDelete}
-              className="bg-destructive hover:bg-destructive/90"
               disabled={deletePostMutation.isPending}
+              className="min-w-[100px]"
             >
-              {deletePostMutation.isPending ? "Deleting..." : "Delete"}
+              {deletePostMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <TrashIcon className="mr-2 h-4 w-4" />
+                  Delete
+                </>
+              )}
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
