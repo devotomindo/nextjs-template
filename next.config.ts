@@ -5,12 +5,10 @@ const nextConfig: NextConfig = {
   transpilePackages: ["@t3-oss/env-nextjs", "@t3-oss/env-core"],
   typedRoutes: true,
   cacheHandler:
-  process.env.NODE_ENV === "production"
-    ? require.resolve("./cache-handler.mjs")
-    : undefined,
-  experimental: {
-    reactCompiler: true,
-  },
+    process.env.NODE_ENV === "production"
+      ? require.resolve("./cache-handler.mjs")
+      : undefined,
+  reactCompiler: true,
 };
 
 export default nextConfig;

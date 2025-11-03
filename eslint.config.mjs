@@ -1,19 +1,11 @@
-import { dirname } from "path";
-import { fileURLToPath } from "url";
-import pluginQuery from '@tanstack/eslint-plugin-query'
-import { FlatCompat } from "@eslint/eslintrc";
+import { defineConfig, globalIgnores } from "eslint/config";
+import nextVitals from "eslint-config-next/core-web-vitals";
+import nextTs from "eslint-config-next/typescript";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-});
-
-
-const eslintConfig = [
+const eslintConfig = defineConfig([
   ...pluginQuery.configs["flat/recommended"],
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
+  ...nextVitals,
+  ...nextTs,
   {
     rules: {
       "import/no-cycle": 2,
@@ -24,16 +16,18 @@ const eslintConfig = [
       ],
     },
   },
-  {
-    ignores: [
-      "node_modules/**",
-      ".next/**",
-      "out/**",
-      "build/**",
-      "next-env.d.ts",
-      "docker_data/**",
-    ],
-  },
-];
+  // Override default ignores of eslint-config-next.
+  globalIgnores([
+    // Default ignores of eslint-config-next:
+    ".next/**",
+    "out/**",
+    "build/**",
+    "next-env.d.ts",
+
+    "node_modules/**",
+    "docker_data/**",
+  ]),
+]);
 
 export default eslintConfig;
+
