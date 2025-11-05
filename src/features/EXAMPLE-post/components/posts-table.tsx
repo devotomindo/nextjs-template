@@ -697,7 +697,7 @@ export function PostsTable() {
         <DialogContent className="max-w-lg">
           <DialogHeader className="space-y-3">
             <div className="flex items-start gap-4">
-              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-red-100">
                 <AlertTriangle className="h-6 w-6 text-red-600" />
               </div>
               <div className="flex-1 space-y-1">
@@ -729,7 +729,7 @@ export function PostsTable() {
 
             <div className="rounded-lg border border-red-200 bg-red-50 p-3.5">
               <div className="flex gap-3">
-                <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-600" />
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />
                 <p className="text-sm text-red-900">
                   This will permanently delete the post and all associated data.
                   This action cannot be undone.
