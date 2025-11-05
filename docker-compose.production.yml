@@ -1,17 +1,17 @@
 services:
   postgres:
     extends:
-      file: docker-compose.development.yml
+      file: docker-compose.yml
       service: postgres
 
   pgbouncer:
     extends:
-      file: docker-compose.development.yml
+      file: docker-compose.yml
       service: pgbouncer
 
   minio:
     extends:
-      file: docker-compose.development.yml
+      file: docker-compose.yml
       service: minio
 
   redis:
@@ -29,7 +29,6 @@ services:
       retries: 5
 
   nextjs:
-    image: nextjs:latest
     depends_on:
       postgres:
         condition: service_healthy
