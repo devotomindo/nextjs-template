@@ -28,15 +28,20 @@ services:
       DB_USER: ${POSTGRES_USER}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_NAME: ${POSTGRES_DB}
+      LISTEN_PORT: 6432
       POOL_MODE: session
       MAX_CLIENT_CONN: 1000
       DEFAULT_POOL_SIZE: 20
       AUTH_TYPE: scram-sha-256
       # SERVER_TLS_SSLMODE: require # Uncomment if you need TLS between pgbouncer and postgres
     ports:
-      - "6432:5432"
+      - "6432:6432"
     healthcheck:
-      test: 'env PGPASSWORD="${POSTGRES_PASSWORD}" psql -h localhost -p 5432 -U "${POSTGRES_USER}" -d ${POSTGRES_DB} -c "SELECT 1" >/dev/null 2>&1'
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER} -h localhost -p 6432 -d ${POSTGRES_DB} || exit 1",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
