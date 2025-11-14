@@ -30,7 +30,7 @@ pnpm lint                   # Run ESLint
 # Database
 pnpm db:generate            # Generate migrations from schema
 pnpm db:migrate             # Run pending migrations
-pnpm db:push                # Push schema changes directly (dev only)
+pnpm db:push                # Push schema changes directly (prefer db:migrate over db:push)
 pnpm db:studio              # Open Drizzle Studio
 pnpm db:seed                # Seed database with sample data
 
@@ -168,7 +168,7 @@ NODE_ENV
 4. Register in `src/lib/orpc/router.ts`
 5. Create components in `components/` subfolder
 6. Add database tables to `src/db/drizzle/schema.ts` if needed
-7. Run `pnpm db:generate` and `pnpm db:push` for schema changes
+7. Run `pnpm db:generate` and `pnpm db:migrate` for schema changes
 
 ## File Naming
 

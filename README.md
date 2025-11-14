@@ -290,7 +290,7 @@ pnpm lint                   # Run ESLint
 # Database
 pnpm db:generate            # Generate migrations from schema
 pnpm db:migrate             # Run pending migrations
-pnpm db:push                # Push schema changes directly (dev only)
+pnpm db:push                # Push schema changes directly (prefer db:migrate over db:push)
 pnpm db:studio              # Open Drizzle Studio
 pnpm db:seed                # Seed database with sample data
 
@@ -375,7 +375,7 @@ After changes, run:
 
 ```bash
 pnpm db:generate  # Generate migration
-pnpm db:push      # Apply to database
+pnpm db:migrate   # Apply pending migrations to database
 ```
 
 ## Environment Variables
