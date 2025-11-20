@@ -6,12 +6,12 @@ import { Sidebar, SidebarContent, SidebarRail } from "@/components/ui/sidebar";
 import { HomeIcon } from "lucide-react";
 import * as React from "react";
 
-export function AdminSidebar({
+export function DashboardSidebar({
   ...props
 }: React.ComponentProps<typeof Sidebar>) {
   const navItems: SidebarItem[] = [
     {
-      label: "Admin",
+      label: "Dashboard",
       items: [
         {
           title: "Dashboard",

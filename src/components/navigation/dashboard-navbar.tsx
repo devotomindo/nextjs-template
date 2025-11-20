@@ -4,7 +4,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import Link from "next/link";
 import { UserDropdown } from "./user-dropdown";
 
-export function AdminNavbar() {
+export function DashboardNavbar() {
   return (
     <nav className="bg-background/80 supports-[backdrop-filter]:bg-background/60 border-b px-4 backdrop-blur">
       <div className="flex h-16 items-center justify-between">
