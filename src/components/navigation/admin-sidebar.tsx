@@ -6,14 +6,9 @@ import { Sidebar, SidebarContent, SidebarRail } from "@/components/ui/sidebar";
 import { HomeIcon } from "lucide-react";
 import * as React from "react";
 
-interface AdminSidebarProps extends React.ComponentProps<typeof Sidebar> {
-  showEsignMenu?: boolean;
-}
-
 export function AdminSidebar({
-  showEsignMenu = false,
   ...props
-}: AdminSidebarProps) {
+}: React.ComponentProps<typeof Sidebar>) {
   const navItems: SidebarItem[] = [
     {
       label: "Admin",
