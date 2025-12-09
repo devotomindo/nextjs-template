@@ -4,12 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-A Next.js 15 full-stack application template with TypeScript, featuring type-safe RPC communication via oRPC, authentication with Better Auth, database management with Drizzle ORM and PostgreSQL, S3-compatible storage (MinIO), and Redis caching.
+A Next.js 16 full-stack application template with TypeScript, featuring type-safe RPC communication via oRPC, authentication with Better Auth, database management with Drizzle ORM and PostgreSQL, S3-compatible storage (MinIO), and Redis caching.
 
 **UI Library**: shadcn/ui (New York variant) - installed components are in `src/components/ui/`
 
 **Key Technologies**:
-- Next.js 15 with React 19 and React Compiler
+- Next.js 16 with React 19 and React Compiler
 - oRPC for type-safe client-server communication
 - TanStack Query + TanStack Table for data management and tables
 - React Hook Form with Zod validation

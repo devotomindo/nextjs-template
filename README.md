@@ -1,6 +1,6 @@
 # Next.js Full-Stack Template
 
-A production-ready Next.js 15 full-stack application template with TypeScript, featuring type-safe RPC communication, authentication, database management, and cloud storage.
+A production-ready Next.js 16 full-stack application template with TypeScript, featuring type-safe RPC communication, authentication, database management, and cloud storage.
 
 ## Features
 
@@ -17,7 +17,7 @@ A production-ready Next.js 15 full-stack application template with TypeScript, f
 
 ## Tech Stack
 
-- **Framework**: [Next.js 15](https://nextjs.org/) with App Router
+- **Framework**: [Next.js 16](https://nextjs.org/) with App Router
 - **Language**: [TypeScript](https://www.typescriptlang.org/)
 - **UI Library**: [React 19](https://react.dev/) with React Compiler
 - **RPC Layer**: [oRPC](https://orpc.unnoq.com/)
