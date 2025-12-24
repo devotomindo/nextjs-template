@@ -29,9 +29,9 @@ services:
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_NAME: ${POSTGRES_DB}
       LISTEN_PORT: 6432
-      POOL_MODE: transaction
+      POOL_MODE: session
       MAX_CLIENT_CONN: 1000
-      DEFAULT_POOL_SIZE: 50
+      DEFAULT_POOL_SIZE: 100
       AUTH_TYPE: scram-sha-256
       ADMIN_USERS: ${POSTGRES_USER}
       # SERVER_TLS_SSLMODE: require # Uncomment if you need TLS between pgbouncer and postgres
