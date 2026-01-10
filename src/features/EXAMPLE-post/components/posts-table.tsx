@@ -370,7 +370,10 @@ export function PostsTable() {
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
                   {headerGroup.headers.map((header) => (
-                    <th key={header.id} className="px-4 py-3 sm:px-6">
+                    <th
+                      key={header.id}
+                      className="px-4 py-3 text-left text-sm font-semibold tracking-wider"
+                    >
                       {header.isPlaceholder
                         ? null
                         : flexRender(
