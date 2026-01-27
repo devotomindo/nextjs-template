@@ -257,7 +257,11 @@ export function PostsTable() {
       {
         accessorKey: "title",
         header: ({ column }) => (
-          <SortableHeader column={column} sortDirection={getSortDirection("title")}>
+          <SortableHeader
+            column={column}
+            sortDirection={getSortDirection("title")}
+            showColumnFilter={true}
+          >
             Title
           </SortableHeader>
         ),
@@ -282,7 +286,10 @@ export function PostsTable() {
       {
         accessorKey: "createdAt",
         header: ({ column }) => (
-          <SortableHeader column={column} sortDirection={getSortDirection("createdAt")}>
+          <SortableHeader
+            column={column}
+            sortDirection={getSortDirection("createdAt")}
+          >
             Created
           </SortableHeader>
         ),
@@ -302,7 +309,10 @@ export function PostsTable() {
       {
         accessorKey: "updatedAt",
         header: ({ column }) => (
-          <SortableHeader column={column} sortDirection={getSortDirection("updatedAt")}>
+          <SortableHeader
+            column={column}
+            sortDirection={getSortDirection("updatedAt")}
+          >
             Updated
           </SortableHeader>
         ),

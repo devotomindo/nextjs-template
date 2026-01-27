@@ -28,6 +28,8 @@ interface SortableHeaderProps<T> {
   children: React.ReactNode;
   /** Override sort direction display for server-side sorting */
   sortDirection?: SortDirection;
+  /** Show column filter option in dropdown menu (default: false) */
+  showColumnFilter?: boolean;
   /** Callback for server-side column filtering */
   onColumnFilter?: (value: string) => void;
   /** Controlled column filter value for server-side filtering */
@@ -38,10 +40,11 @@ export const SortableHeader = <T,>({
   column,
   children,
   sortDirection,
+  showColumnFilter = false,
   onColumnFilter,
   columnFilterValue,
 }: SortableHeaderProps<T>) => {
-  const [showFilter, setShowFilter] = useState(false);
+  const [isFilterVisible, setIsFilterVisible] = useState(false);
   const [filterValue, setFilterValue] = useState(
     (column.getFilterValue() as string) || "",
   );
@@ -50,8 +53,8 @@ export const SortableHeader = <T,>({
   // Use sortDirection prop if provided for display, otherwise use TanStack Table's state
   const currentSort = sortDirection ?? column.getIsSorted();
 
-  // Hide column filter when onColumnFilter is provided (server-side mode uses global search)
-  const showColumnFilterOption = !onColumnFilter;
+  // Use controlled value if provided, otherwise use local state
+  const currentFilterValue = columnFilterValue ?? filterValue;
 
   const handleSort = () => {
     if (currentSort === "asc") {
@@ -84,8 +87,6 @@ export const SortableHeader = <T,>({
     }
   };
 
-  const currentFilterValue = columnFilterValue ?? filterValue;
-
   const clearFilter = () => {
     if (onColumnFilter) {
       onColumnFilter("");
@@ -93,7 +94,7 @@ export const SortableHeader = <T,>({
       setFilterValue("");
       column.setFilterValue("");
     }
-    setShowFilter(false);
+    setIsFilterVisible(false);
   };
 
   const getSortIcon = () => {
@@ -149,15 +150,15 @@ export const SortableHeader = <T,>({
                 Clear Sort
               </DropdownMenuItem>
             )}
-            {showColumnFilterOption && (
+            {showColumnFilter && (
               <>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={() => {
-                    if (showFilter) {
+                    if (isFilterVisible) {
                       clearFilter();
                     } else {
-                      setShowFilter(true);
+                      setIsFilterVisible(true);
                       setTimeout(() => {
                         inputRef.current?.focus();
                       }, 200);
@@ -165,7 +166,7 @@ export const SortableHeader = <T,>({
                   }}
                 >
                   <SearchIcon className="mr-2 h-4 w-4" />
-                  {showFilter ? "Hide Filter" : "Show Filter"}
+                  {isFilterVisible ? "Hide Filter" : "Show Filter"}
                 </DropdownMenuItem>
                 {currentFilterValue && (
                   <DropdownMenuItem onClick={clearFilter}>
@@ -178,7 +179,7 @@ export const SortableHeader = <T,>({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      {showFilter && showColumnFilterOption && (
+      {isFilterVisible && showColumnFilter && (
         <Input
           ref={inputRef}
           placeholder={`Filter ${children}`}
