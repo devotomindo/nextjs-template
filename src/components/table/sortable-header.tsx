@@ -110,13 +110,13 @@ export const SortableHeader = <T,>({
   const getSortIcon = () => {
     if (currentSortDirection === "asc")
       return (
-        <ArrowUpIcon className="ml-1 size-6 rounded border border-emerald-200 bg-emerald-100 p-1 text-emerald-800" />
+        <ArrowUpIcon className="ml-1 size-6 rounded border border-slate-200 bg-slate-100 p-1 text-slate-700" />
       );
     if (currentSortDirection === "desc")
       return (
-        <ArrowDownIcon className="ml-1 size-6 rounded border border-emerald-200 bg-emerald-100 p-1 text-emerald-800" />
+        <ArrowDownIcon className="ml-1 size-6 rounded border border-slate-200 bg-slate-100 p-1 text-slate-700" />
       );
-    return <ArrowUpDownIcon className="ml-1 h-4 w-4" />;
+    return <ArrowUpDownIcon className="ml-1 h-4 w-4 text-slate-400" />;
   };
 
   return (
@@ -125,14 +125,14 @@ export const SortableHeader = <T,>({
         <Button
           variant="ghost"
           onClick={handleSort}
-          className="h-auto p-0 font-semibold hover:bg-transparent"
+          className="h-auto p-0 font-semibold text-slate-600 hover:bg-transparent hover:text-slate-900"
         >
           {children}
           {getSortIcon()}
         </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
+            <Button variant="ghost" className="h-8 w-8 p-0 text-slate-400 hover:text-slate-600">
               <MoreVerticalIcon className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
