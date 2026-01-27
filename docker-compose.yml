@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:17.6
+    image: postgres:18.1
     restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
@@ -9,7 +9,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - ./docker_data/postgres_data:/var/lib/postgresql/data
+      - ./docker_data/postgres_data:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
@@ -17,7 +17,7 @@ services:
       retries: 5
 
   pgbouncer:
-    image: edoburu/pgbouncer:v1.24.1-p1
+    image: edoburu/pgbouncer:v1.25.1-p0
     restart: always
     depends_on:
       postgres:
@@ -29,9 +29,9 @@ services:
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_NAME: ${POSTGRES_DB}
       LISTEN_PORT: 6432
-      POOL_MODE: session
+      POOL_MODE: transaction
       MAX_CLIENT_CONN: 1000
-      DEFAULT_POOL_SIZE: 100
+      DEFAULT_POOL_SIZE: 50
       AUTH_TYPE: scram-sha-256
       ADMIN_USERS: ${POSTGRES_USER}
       # SERVER_TLS_SSLMODE: require # Uncomment if you need TLS between pgbouncer and postgres
