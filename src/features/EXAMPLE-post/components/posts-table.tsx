@@ -41,6 +41,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { orpcClient, orpcTanstackQueryUtils } from "@/lib/orpc/client";
 import type { Router } from "@/lib/orpc/router";
 import { fuzzyFilter } from "@/lib/table/fuzzy-filter";
@@ -51,9 +52,7 @@ import {
   ColumnDef,
   flexRender,
   getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
+  SortingState,
   useReactTable,
 } from "@tanstack/react-table";
 import {
@@ -65,12 +64,16 @@ import {
   SearchIcon,
   TrashIcon,
 } from "lucide-react";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
 
-type Post = InferRouterOutputs<Router>["post"]["listAllPosts"][number];
+type ListAllPostsResponse = InferRouterOutputs<Router>["post"]["listAllPosts"];
+type Post = ListAllPostsResponse["posts"][number];
+
+type SortBy = "title" | "createdAt" | "updatedAt";
+type SortOrder = "asc" | "desc";
 
 const postFormSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -78,7 +81,15 @@ const postFormSchema = z.object({
 });
 
 export function PostsTable() {
-  const [globalFilter, setGlobalFilter] = useState("");
+  // Server-side pagination and filtering state
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search, 300);
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "createdAt", desc: true },
+  ]);
+
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -87,20 +98,48 @@ export function PostsTable() {
 
   const queryClient = useQueryClient();
 
+  // Derive sortBy and sortOrder from TanStack Table's sorting state
+  const sortBy: SortBy =
+    sorting.length > 0 ? (sorting[0].id as SortBy) : "createdAt";
+  const sortOrder: SortOrder =
+    sorting.length > 0 ? (sorting[0].desc ? "desc" : "asc") : "desc";
+
+  // Reset page when search or sorting changes
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, sorting]);
+
   const {
-    data: posts,
+    data,
     isLoading,
     error,
-  } = useQuery(orpcTanstackQueryUtils.post.listAllPosts.queryOptions());
+  } = useQuery(
+    orpcTanstackQueryUtils.post.listAllPosts.queryOptions({
+      input: {
+        page,
+        pageSize,
+        search: debouncedSearch || undefined,
+        sortBy,
+        sortOrder,
+      },
+    }),
+  );
+
+  const posts = data?.posts ?? [];
+  const pagination = data?.pagination;
+  const totalPages = pagination?.totalPages ?? 0;
+  const totalCount = pagination?.totalCount ?? 0;
 
   const createPostMutation = useMutation({
     mutationFn: (data: z.infer<typeof postFormSchema>) =>
       orpcClient.post.createPost(data),
     onSuccess: () => {
       toast.success("Post created successfully");
-      queryClient.invalidateQueries(
-        orpcTanstackQueryUtils.post.listAllPosts.queryOptions(),
-      );
+      queryClient.invalidateQueries({
+        queryKey: orpcTanstackQueryUtils.post.listAllPosts.queryOptions({
+          input: {},
+        }).queryKey.slice(0, 2),
+      });
       setIsCreateDialogOpen(false);
       createForm.reset();
     },
@@ -116,9 +155,11 @@ export function PostsTable() {
       orpcClient.post.updatePost(data),
     onSuccess: () => {
       toast.success("Post updated successfully");
-      queryClient.invalidateQueries(
-        orpcTanstackQueryUtils.post.listAllPosts.queryOptions(),
-      );
+      queryClient.invalidateQueries({
+        queryKey: orpcTanstackQueryUtils.post.listAllPosts.queryOptions({
+          input: {},
+        }).queryKey.slice(0, 2),
+      });
       setIsEditDialogOpen(false);
       setSelectedPost(null);
     },
@@ -133,9 +174,11 @@ export function PostsTable() {
     mutationFn: (data: { id: string }) => orpcClient.post.deletePost(data),
     onSuccess: () => {
       toast.success("Post deleted successfully");
-      queryClient.invalidateQueries(
-        orpcTanstackQueryUtils.post.listAllPosts.queryOptions(),
-      );
+      queryClient.invalidateQueries({
+        queryKey: orpcTanstackQueryUtils.post.listAllPosts.queryOptions({
+          input: {},
+        }).queryKey.slice(0, 2),
+      });
       setIsDeleteDialogOpen(false);
       setPostToDelete(null);
     },
@@ -195,12 +238,41 @@ export function PostsTable() {
     }
   };
 
+  // Helper to get current sort direction for a column
+  const getSortDirection = useCallback(
+    (columnId: string): "asc" | "desc" | false => {
+      const sort = sorting.find((s) => s.id === columnId);
+      if (!sort) return false;
+      return sort.desc ? "desc" : "asc";
+    },
+    [sorting],
+  );
+
+  // Helper to handle sort changes from SortableHeader
+  const handleSortChange = useCallback(
+    (columnId: string, direction: "asc" | "desc" | false) => {
+      if (direction === false) {
+        // Clear sorting - fall back to default
+        setSorting([{ id: "createdAt", desc: true }]);
+      } else {
+        setSorting([{ id: columnId, desc: direction === "desc" }]);
+      }
+    },
+    [],
+  );
+
   const columns = useMemo<ColumnDef<Post>[]>(
     () => [
       {
         accessorKey: "title",
         header: ({ column }) => (
-          <SortableHeader column={column}>Title</SortableHeader>
+          <SortableHeader
+            column={column}
+            sortDirection={getSortDirection("title")}
+            onSort={(direction) => handleSortChange("title", direction)}
+          >
+            Title
+          </SortableHeader>
         ),
         cell: ({ row }) => (
           <div className="flex items-start gap-3">
@@ -223,13 +295,19 @@ export function PostsTable() {
       {
         accessorKey: "createdAt",
         header: ({ column }) => (
-          <SortableHeader column={column}>Created</SortableHeader>
+          <SortableHeader
+            column={column}
+            sortDirection={getSortDirection("createdAt")}
+            onSort={(direction) => handleSortChange("createdAt", direction)}
+          >
+            Created
+          </SortableHeader>
         ),
         cell: ({ getValue }) => {
           const date = getValue() as Date;
           return (
             <span className="text-sm text-slate-600">
-              {date.toLocaleDateString("en-US", {
+              {new Date(date).toLocaleDateString("en-US", {
                 year: "numeric",
                 month: "short",
                 day: "numeric",
@@ -237,18 +315,23 @@ export function PostsTable() {
             </span>
           );
         },
-        sortingFn: "datetime",
       },
       {
         accessorKey: "updatedAt",
         header: ({ column }) => (
-          <SortableHeader column={column}>Updated</SortableHeader>
+          <SortableHeader
+            column={column}
+            sortDirection={getSortDirection("updatedAt")}
+            onSort={(direction) => handleSortChange("updatedAt", direction)}
+          >
+            Updated
+          </SortableHeader>
         ),
         cell: ({ getValue }) => {
           const date = getValue() as Date;
           return (
             <span className="text-sm text-slate-600">
-              {date.toLocaleDateString("en-US", {
+              {new Date(date).toLocaleDateString("en-US", {
                 year: "numeric",
                 month: "short",
                 day: "numeric",
@@ -256,7 +339,6 @@ export function PostsTable() {
             </span>
           );
         },
-        sortingFn: "datetime",
       },
       {
         id: "actions",
@@ -294,29 +376,28 @@ export function PostsTable() {
         },
       },
     ],
-    [handleEditClick, handleDeleteClick],
+    [handleEditClick, handleDeleteClick, getSortDirection, handleSortChange],
   );
 
   const tableHook = useReactTable({
-    data: posts || [],
+    data: posts,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    manualPagination: true,
+    manualSorting: true,
+    manualFiltering: true,
+    pageCount: totalPages,
     filterFns: {
       fuzzy: fuzzyFilter,
     },
     state: {
-      globalFilter,
-    },
-    onGlobalFilterChange: setGlobalFilter,
-    globalFilterFn: "fuzzy",
-    initialState: {
+      sorting,
       pagination: {
-        pageSize: 10,
+        pageIndex: page - 1,
+        pageSize,
       },
     },
+    onSortingChange: setSorting,
   });
 
   /**
@@ -327,6 +408,10 @@ export function PostsTable() {
    */
   const tableRef = useRef(tableHook);
   const table = tableRef.current;
+
+  // Calculate display values for pagination
+  const startItem = totalCount === 0 ? 0 : (page - 1) * pageSize + 1;
+  const endItem = Math.min(page * pageSize, totalCount);
 
   return (
     <div className="flex flex-col gap-4 p-4">
@@ -357,8 +442,8 @@ export function PostsTable() {
             <SearchIcon className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <Input
               placeholder="Search posts..."
-              value={globalFilter}
-              onChange={(event) => setGlobalFilter(event.target.value)}
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
               className="w-full pl-9"
             />
           </div>
@@ -416,7 +501,7 @@ export function PostsTable() {
                     colSpan={columns.length}
                     className="px-4 py-16 text-center text-sm text-slate-500 sm:px-6 sm:py-20"
                   >
-                    {globalFilter
+                    {search
                       ? "No posts match your search. Try adjusting your search terms."
                       : "No posts yet. Create your first post to get started."}
                   </td>
@@ -441,18 +526,8 @@ export function PostsTable() {
 
         <div className="flex flex-col gap-4 border-t border-slate-100 p-4 lg:flex-row lg:items-center lg:justify-between lg:p-6">
           <div className="text-center text-sm text-gray-600 lg:text-left">
-            Showing{" "}
-            {table.getState().pagination.pageIndex *
-              table.getState().pagination.pageSize +
-              1}{" "}
-            -{" "}
-            {Math.min(
-              (table.getState().pagination.pageIndex + 1) *
-                table.getState().pagination.pageSize,
-              table.getFilteredRowModel().rows.length,
-            )}{" "}
-            of {table.getFilteredRowModel().rows.length} post
-            {table.getFilteredRowModel().rows.length !== 1 ? "s" : ""}
+            Showing {startItem} - {endItem} of {totalCount} post
+            {totalCount !== 1 ? "s" : ""}
           </div>
 
           <div className="flex flex-col items-center gap-3 lg:flex-row lg:gap-2">
@@ -461,20 +536,19 @@ export function PostsTable() {
                 Rows per page:
               </span>
               <Select
-                value={`${table.getState().pagination.pageSize}`}
+                value={`${pageSize}`}
                 onValueChange={(value) => {
-                  table.setPageSize(Number(value));
+                  setPageSize(Number(value));
+                  setPage(1);
                 }}
               >
                 <SelectTrigger className="h-9 w-[70px]">
-                  <SelectValue
-                    placeholder={table.getState().pagination.pageSize}
-                  />
+                  <SelectValue placeholder={pageSize} />
                 </SelectTrigger>
                 <SelectContent side="top">
-                  {[5, 10, 20, 30, 40, 50].map((pageSize) => (
-                    <SelectItem key={pageSize} value={`${pageSize}`}>
-                      {pageSize}
+                  {[5, 10, 20, 30, 40, 50].map((size) => (
+                    <SelectItem key={size} value={`${size}`}>
+                      {size}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -484,31 +558,29 @@ export function PostsTable() {
               <PaginationContent className="flex-wrap">
                 <PaginationItem>
                   <PaginationPrevious
-                    onClick={() => table.previousPage()}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
                     size="default"
                     className={
-                      !table.getCanPreviousPage()
+                      page <= 1
                         ? "pointer-events-none opacity-50"
                         : "cursor-pointer"
                     }
                   />
                 </PaginationItem>
 
-                {Array.from({ length: table.getPageCount() }, (_, i) => {
+                {Array.from({ length: totalPages }, (_, i) => {
                   const pageNumber = i + 1;
-                  const currentPage = table.getState().pagination.pageIndex + 1;
 
                   if (
                     pageNumber === 1 ||
-                    pageNumber === table.getPageCount() ||
-                    (pageNumber >= currentPage - 1 &&
-                      pageNumber <= currentPage + 1)
+                    pageNumber === totalPages ||
+                    (pageNumber >= page - 1 && pageNumber <= page + 1)
                   ) {
                     return (
                       <PaginationItem key={pageNumber}>
                         <PaginationLink
-                          onClick={() => table.setPageIndex(i)}
-                          isActive={pageNumber === currentPage}
+                          onClick={() => setPage(pageNumber)}
+                          isActive={pageNumber === page}
                           size="icon"
                           className="cursor-pointer"
                         >
@@ -517,8 +589,8 @@ export function PostsTable() {
                       </PaginationItem>
                     );
                   } else if (
-                    pageNumber === currentPage - 2 ||
-                    pageNumber === currentPage + 2
+                    pageNumber === page - 2 ||
+                    pageNumber === page + 2
                   ) {
                     return (
                       <PaginationItem key={pageNumber}>
@@ -531,10 +603,10 @@ export function PostsTable() {
 
                 <PaginationItem>
                   <PaginationNext
-                    onClick={() => table.nextPage()}
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     size="default"
                     className={
-                      !table.getCanNextPage()
+                      page >= totalPages
                         ? "pointer-events-none opacity-50"
                         : "cursor-pointer"
                     }
