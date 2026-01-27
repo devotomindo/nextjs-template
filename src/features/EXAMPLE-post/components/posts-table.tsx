@@ -467,7 +467,7 @@ export function PostsTable() {
 
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="border-y border-slate-200 bg-slate-50 text-left text-xs tracking-wide text-slate-500 uppercase">
+            <thead className="border-y border-slate-200 bg-slate-50 text-left text-xs tracking-wide">
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
                   {headerGroup.headers.map((header) => (
