@@ -35,6 +35,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Tooltip,
@@ -65,7 +66,6 @@ import {
   TrashIcon,
   XIcon,
 } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -111,11 +111,7 @@ export function PostsTable() {
     setPage(1);
   }, [debouncedSearch, sorting]);
 
-  const {
-    data,
-    isLoading,
-    error,
-  } = useQuery(
+  const { data, isLoading, error } = useQuery(
     orpcTanstackQueryUtils.post.listAllPosts.queryOptions({
       input: {
         page,
@@ -138,9 +134,11 @@ export function PostsTable() {
     onSuccess: () => {
       toast.success("Post created successfully");
       queryClient.invalidateQueries({
-        queryKey: orpcTanstackQueryUtils.post.listAllPosts.queryOptions({
-          input: {},
-        }).queryKey.slice(0, 2),
+        queryKey: orpcTanstackQueryUtils.post.listAllPosts
+          .queryOptions({
+            input: {},
+          })
+          .queryKey.slice(0, 2),
       });
       setIsCreateDialogOpen(false);
       createForm.reset();
@@ -158,9 +156,11 @@ export function PostsTable() {
     onSuccess: () => {
       toast.success("Post updated successfully");
       queryClient.invalidateQueries({
-        queryKey: orpcTanstackQueryUtils.post.listAllPosts.queryOptions({
-          input: {},
-        }).queryKey.slice(0, 2),
+        queryKey: orpcTanstackQueryUtils.post.listAllPosts
+          .queryOptions({
+            input: {},
+          })
+          .queryKey.slice(0, 2),
       });
       setIsEditDialogOpen(false);
       setSelectedPost(null);
@@ -177,9 +177,11 @@ export function PostsTable() {
     onSuccess: () => {
       toast.success("Post deleted successfully");
       queryClient.invalidateQueries({
-        queryKey: orpcTanstackQueryUtils.post.listAllPosts.queryOptions({
-          input: {},
-        }).queryKey.slice(0, 2),
+        queryKey: orpcTanstackQueryUtils.post.listAllPosts
+          .queryOptions({
+            input: {},
+          })
+          .queryKey.slice(0, 2),
       });
       setIsDeleteDialogOpen(false);
       setPostToDelete(null);
@@ -448,7 +450,7 @@ export function PostsTable() {
               placeholder="Search posts..."
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              className="w-full pl-9 pr-9"
+              className="w-full pr-9 pl-9"
             />
             {search && (
               <button
