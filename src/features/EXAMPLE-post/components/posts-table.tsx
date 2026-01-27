@@ -260,7 +260,6 @@ export function PostsTable() {
           <SortableHeader
             column={column}
             sortDirection={getSortDirection("title")}
-            showColumnFilter={true}
           >
             Title
           </SortableHeader>
