@@ -385,6 +385,7 @@ export function PostsTable() {
     [handleEditClick, handleDeleteClick, getSortDirection, handleSortChange],
   );
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- using useRef trick to bypass React Compiler optimization
   const tableHook = useReactTable({
     data: posts,
     columns,
