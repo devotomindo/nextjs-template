@@ -26,17 +26,20 @@ type SortDirection = "asc" | "desc" | false;
 interface SortableHeaderProps<T> {
   column: Column<T, unknown>;
   children: React.ReactNode;
-  /** Override sort direction for server-side sorting */
+  /** Override sort direction display for server-side sorting */
   sortDirection?: SortDirection;
-  /** Callback for server-side sorting */
-  onSort?: (direction: SortDirection) => void;
+  /** Callback for server-side column filtering */
+  onColumnFilter?: (value: string) => void;
+  /** Controlled column filter value for server-side filtering */
+  columnFilterValue?: string;
 }
 
 export const SortableHeader = <T,>({
   column,
   children,
   sortDirection,
-  onSort,
+  onColumnFilter,
+  columnFilterValue,
 }: SortableHeaderProps<T>) => {
   const [showFilter, setShowFilter] = useState(false);
   const [filterValue, setFilterValue] = useState(
@@ -44,75 +47,61 @@ export const SortableHeader = <T,>({
   );
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Use server-side sort direction if provided, otherwise fall back to TanStack Table
-  const isServerSide = sortDirection !== undefined && onSort !== undefined;
-  const currentSortDirection = isServerSide
-    ? sortDirection
-    : column.getIsSorted();
+  // Use sortDirection prop if provided for display, otherwise use TanStack Table's state
+  const currentSort = sortDirection ?? column.getIsSorted();
+
+  // Hide column filter when onColumnFilter is provided (server-side mode uses global search)
+  const showColumnFilterOption = !onColumnFilter;
 
   const handleSort = () => {
-    if (isServerSide) {
-      // Server-side sorting: cycle through asc -> desc -> false
-      if (currentSortDirection === "asc") {
-        onSort("desc");
-      } else if (currentSortDirection === "desc") {
-        onSort(false);
-      } else {
-        onSort("asc");
-      }
+    if (currentSort === "asc") {
+      column.toggleSorting(true); // desc
+    } else if (currentSort === "desc") {
+      column.clearSorting(); // no sort
     } else {
-      // Client-side sorting using TanStack Table
-      if (column.getIsSorted() === "asc") {
-        column.toggleSorting(true); // desc
-      } else if (column.getIsSorted() === "desc") {
-        column.clearSorting(); // no sort
-      } else {
-        column.toggleSorting(false); // asc
-      }
+      column.toggleSorting(false); // asc
     }
   };
 
   const handleSortAsc = () => {
-    if (isServerSide) {
-      onSort("asc");
-    } else {
-      column.toggleSorting(false);
-    }
+    column.toggleSorting(false);
   };
 
   const handleSortDesc = () => {
-    if (isServerSide) {
-      onSort("desc");
-    } else {
-      column.toggleSorting(true);
-    }
+    column.toggleSorting(true);
   };
 
   const handleClearSort = () => {
-    if (isServerSide) {
-      onSort(false);
-    } else {
-      column.clearSorting();
-    }
+    column.clearSorting();
   };
 
   const handleFilter = (value: string) => {
-    setFilterValue(value);
-    column.setFilterValue(value);
+    if (onColumnFilter) {
+      onColumnFilter(value);
+    } else {
+      setFilterValue(value);
+      column.setFilterValue(value);
+    }
   };
 
+  const currentFilterValue = columnFilterValue ?? filterValue;
+
   const clearFilter = () => {
-    setFilterValue("");
-    column.setFilterValue("");
+    if (onColumnFilter) {
+      onColumnFilter("");
+    } else {
+      setFilterValue("");
+      column.setFilterValue("");
+    }
     setShowFilter(false);
   };
 
   const getSortIcon = () => {
-    if (currentSortDirection === "asc")
+    if (currentSort === "asc")
       return (
         <ArrowUpIcon className="ml-1 size-6 rounded border border-emerald-200 bg-emerald-100 p-1 text-emerald-800" />
       );
-    if (currentSortDirection === "desc")
+    if (currentSort === "desc")
       return (
         <ArrowDownIcon className="ml-1 size-6 rounded border border-emerald-200 bg-emerald-100 p-1 text-emerald-800" />
       );
@@ -142,25 +131,25 @@ export const SortableHeader = <T,>({
           <DropdownMenuContent align="end">
             <DropdownMenuItem
               onClick={handleSortAsc}
-              disabled={currentSortDirection === "asc"}
+              disabled={currentSort === "asc"}
             >
               <ArrowUpIcon className="mr-2 h-4 w-4" />
               Sort Ascending
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={handleSortDesc}
-              disabled={currentSortDirection === "desc"}
+              disabled={currentSort === "desc"}
             >
               <ArrowDownIcon className="mr-2 h-4 w-4" />
               Sort Descending
             </DropdownMenuItem>
-            {currentSortDirection && (
+            {currentSort && (
               <DropdownMenuItem onClick={handleClearSort}>
                 <ArrowUpDownIcon className="mr-2 h-4 w-4" />
                 Clear Sort
               </DropdownMenuItem>
             )}
-            {!isServerSide && (
+            {showColumnFilterOption && (
               <>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
@@ -178,7 +167,7 @@ export const SortableHeader = <T,>({
                   <SearchIcon className="mr-2 h-4 w-4" />
                   {showFilter ? "Hide Filter" : "Show Filter"}
                 </DropdownMenuItem>
-                {filterValue && (
+                {currentFilterValue && (
                   <DropdownMenuItem onClick={clearFilter}>
                     <XIcon className="mr-2 h-4 w-4" />
                     Clear Filter
@@ -189,11 +178,11 @@ export const SortableHeader = <T,>({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      {showFilter && !isServerSide && (
+      {showFilter && showColumnFilterOption && (
         <Input
           ref={inputRef}
           placeholder={`Filter ${children}`}
-          value={filterValue}
+          value={currentFilterValue}
           onChange={(e) => handleFilter(e.target.value)}
           className="h-8"
         />

@@ -252,29 +252,12 @@ export function PostsTable() {
     [sorting],
   );
 
-  // Helper to handle sort changes from SortableHeader
-  const handleSortChange = useCallback(
-    (columnId: string, direction: "asc" | "desc" | false) => {
-      if (direction === false) {
-        // Clear sorting - fall back to default
-        setSorting([{ id: "createdAt", desc: true }]);
-      } else {
-        setSorting([{ id: columnId, desc: direction === "desc" }]);
-      }
-    },
-    [],
-  );
-
   const columns = useMemo<ColumnDef<Post>[]>(
     () => [
       {
         accessorKey: "title",
         header: ({ column }) => (
-          <SortableHeader
-            column={column}
-            sortDirection={getSortDirection("title")}
-            onSort={(direction) => handleSortChange("title", direction)}
-          >
+          <SortableHeader column={column} sortDirection={getSortDirection("title")}>
             Title
           </SortableHeader>
         ),
@@ -299,11 +282,7 @@ export function PostsTable() {
       {
         accessorKey: "createdAt",
         header: ({ column }) => (
-          <SortableHeader
-            column={column}
-            sortDirection={getSortDirection("createdAt")}
-            onSort={(direction) => handleSortChange("createdAt", direction)}
-          >
+          <SortableHeader column={column} sortDirection={getSortDirection("createdAt")}>
             Created
           </SortableHeader>
         ),
@@ -323,11 +302,7 @@ export function PostsTable() {
       {
         accessorKey: "updatedAt",
         header: ({ column }) => (
-          <SortableHeader
-            column={column}
-            sortDirection={getSortDirection("updatedAt")}
-            onSort={(direction) => handleSortChange("updatedAt", direction)}
-          >
+          <SortableHeader column={column} sortDirection={getSortDirection("updatedAt")}>
             Updated
           </SortableHeader>
         ),
@@ -382,7 +357,7 @@ export function PostsTable() {
         },
       },
     ],
-    [handleEditClick, handleDeleteClick, getSortDirection, handleSortChange],
+    [handleEditClick, handleDeleteClick, getSortDirection],
   );
 
   // eslint-disable-next-line react-hooks/incompatible-library -- using useRef trick to bypass React Compiler optimization
