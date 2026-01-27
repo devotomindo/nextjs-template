@@ -63,7 +63,9 @@ import {
   PlusIcon,
   SearchIcon,
   TrashIcon,
+  XIcon,
 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -346,13 +348,14 @@ export function PostsTable() {
         cell: ({ row }) => {
           const post = row.original;
           return (
-            <div className="flex justify-end space-x-2">
+            <div className="flex justify-end gap-1">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="icon"
                     onClick={() => handleEditClick(post)}
+                    className="text-blue-600 transition-transform hover:scale-105 hover:text-blue-700"
                   >
                     <EditIcon className="h-4 w-4" />
                   </Button>
@@ -362,9 +365,10 @@ export function PostsTable() {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="icon"
                     onClick={() => handleDeleteClick(post)}
+                    className="text-red-600 transition-transform hover:scale-105 hover:text-red-700"
                   >
                     <TrashIcon className="h-4 w-4" />
                   </Button>
@@ -444,14 +448,23 @@ export function PostsTable() {
               placeholder="Search posts..."
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              className="w-full pl-9"
+              className="w-full pl-9 pr-9"
             />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <XIcon className="h-4 w-4" />
+              </button>
+            )}
           </div>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="border-y border-slate-100 bg-slate-50 text-left text-xs tracking-wide text-slate-500 uppercase">
+            <thead className="border-y border-slate-200 bg-slate-50 text-left text-xs tracking-wide text-slate-500 uppercase">
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
                   {headerGroup.headers.map((header) => (
@@ -470,19 +483,33 @@ export function PostsTable() {
                 </tr>
               ))}
             </thead>
-            <tbody className="divide-y divide-slate-100 bg-white">
+            <tbody className="divide-y divide-slate-200 bg-white">
               {isLoading ? (
-                <tr>
-                  <td
-                    colSpan={columns.length}
-                    className="px-4 py-16 text-center text-sm text-slate-500 sm:px-6 sm:py-20"
-                  >
-                    <div className="flex flex-col items-center gap-3">
-                      <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
-                      Loading posts...
-                    </div>
-                  </td>
-                </tr>
+                Array.from({ length: 5 }).map((_, index) => (
+                  <tr key={index}>
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-3">
+                        <Skeleton className="h-10 w-10 rounded-full" />
+                        <div className="space-y-2">
+                          <Skeleton className="h-4 w-32" />
+                          <Skeleton className="h-3 w-48" />
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4">
+                      <Skeleton className="h-4 w-24" />
+                    </td>
+                    <td className="px-4 py-4">
+                      <Skeleton className="h-4 w-24" />
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="flex justify-end gap-1">
+                        <Skeleton className="h-8 w-8" />
+                        <Skeleton className="h-8 w-8" />
+                      </div>
+                    </td>
+                  </tr>
+                ))
               ) : error ? (
                 <tr>
                   <td
@@ -499,18 +526,26 @@ export function PostsTable() {
                 <tr>
                   <td
                     colSpan={columns.length}
-                    className="px-4 py-16 text-center text-sm text-slate-500 sm:px-6 sm:py-20"
+                    className="px-4 py-16 text-center sm:px-6 sm:py-20"
                   >
-                    {search
-                      ? "No posts match your search. Try adjusting your search terms."
-                      : "No posts yet. Create your first post to get started."}
+                    <div className="flex flex-col items-center gap-2">
+                      <FileText className="h-12 w-12 text-gray-300" />
+                      <p className="text-sm font-medium text-gray-500">
+                        {search ? "No posts found" : "No posts yet"}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {search
+                          ? "Try adjusting your search terms."
+                          : "Create your first post to get started."}
+                      </p>
+                    </div>
                   </td>
                 </tr>
               ) : (
                 table.getRowModel().rows.map((row) => (
-                  <tr key={row.id} className="transition hover:bg-slate-50/70">
+                  <tr key={row.id} className="transition hover:bg-slate-50">
                     {row.getVisibleCells().map((cell) => (
-                      <td key={cell.id} className="px-4 py-4 sm:px-6">
+                      <td key={cell.id} className="px-4 py-4">
                         {flexRender(
                           cell.column.columnDef.cell,
                           cell.getContext(),
@@ -524,7 +559,7 @@ export function PostsTable() {
           </table>
         </div>
 
-        <div className="flex flex-col gap-4 border-t border-slate-100 p-4 lg:flex-row lg:items-center lg:justify-between lg:p-6">
+        <div className="flex flex-col gap-4 border-t border-slate-200 p-4 lg:flex-row lg:items-center lg:justify-between lg:p-6">
           <div className="text-center text-sm text-gray-600 lg:text-left">
             Showing {startItem} - {endItem} of {totalCount} post
             {totalCount !== 1 ? "s" : ""}
