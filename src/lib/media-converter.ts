@@ -7,7 +7,7 @@ type CompressImageOptions = {
   drop?: number;
   maxSize?: number;
   minQuality?: number;
-}
+};
 
 export async function compressImageWebp({
   buffer,
@@ -19,17 +19,18 @@ export async function compressImageWebp({
 }: CompressImageOptions): Promise<Buffer> {
   try {
     // Convert ArrayBuffer to Buffer if needed
-    const inputBuffer = buffer instanceof ArrayBuffer 
-      ? Buffer.from(buffer) 
-      : buffer;
+    const inputBuffer =
+      buffer instanceof ArrayBuffer ? Buffer.from(buffer) : buffer;
 
     // Validate input parameters
     if (quality < minQuality) {
-      throw new Error(`Cannot compress further: quality ${quality} is below minimum ${minQuality}`);
+      throw new Error(
+        `Cannot compress further: quality ${quality} is below minimum ${minQuality}`,
+      );
     }
 
     if (!inputBuffer?.length) {
-      throw new Error('Invalid input buffer');
+      throw new Error("Invalid input buffer");
     }
 
     // Perform compression
