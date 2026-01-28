@@ -79,7 +79,8 @@ export const postsTable = pgTable("posts", {
     withTimezone: true,
   })
     .notNull()
-    .defaultNow(),
+    .defaultNow()
+    .$onUpdate(() => new Date()),
   title: text("title").notNull(),
   description: text("description"),
 });
