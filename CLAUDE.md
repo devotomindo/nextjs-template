@@ -48,7 +48,13 @@ A Next.js 16 full-stack application template with TypeScript, featuring type-saf
 pnpm dev                    # Start dev server (http://localhost:3000)
 pnpm build                  # Build for production
 pnpm start                  # Start production server
-pnpm lint                   # Run ESLint
+
+# Quality
+pnpm check                  # Typecheck + lint
+pnpm typecheck              # tsc --noEmit
+pnpm lint                   # Run oxlint + ESLint
+pnpm format                 # Format with Prettier
+pnpm format:check           # Check formatting
 
 # Database
 pnpm db:generate            # Generate migrations from schema
@@ -65,77 +71,24 @@ pnpm with-env <command>     # Run commands with .env loaded
 
 ### Feature-Based Structure
 
-Features are organized in `src/features/[feature-name]/` with:
-- `routes/` - oRPC endpoints (backend logic)
-- `components/` - React components
+Features are organized in `src/features/[feature-name]/` with `routes/` (oRPC endpoints) and `components/` (React components). New features follow `src/features/EXAMPLE-post/` as the reference pattern, registered in `src/lib/orpc/router.ts`.
 
-Example: `src/features/EXAMPLE-post/` demonstrates the pattern.
+### oRPC (Type-Safe RPC)
 
-### oRPC Setup (Type-Safe RPC)
+Define routes in `src/features/[feature]/routes/` using `os.input(schema).handler(fn)`.
+Register in `src/lib/orpc/router.ts`.
+Client: `orpcClient.post.createPost(data)` / `orpcTanstackQueryUtils.post.listAllPosts.queryOptions()`
+See `src/features/EXAMPLE-post/` for full pattern.
 
-1. **Define routes** in `src/features/[feature]/routes/`:
-   ```typescript
-   import { os } from "@orpc/server";
-   import * as z from "zod";
+### Data Tables (TanStack Table)
 
-   export const createPost = os
-     .input(z.object({ title: z.string() }))
-     .handler(async ({ input }) => {
-       // Implementation
-     });
-   ```
-
-2. **Register in router** at `src/lib/orpc/router.ts`:
-   ```typescript
-   export const router = {
-     post: postRouter,
-     // Add new feature routers here
-   };
-   ```
-
-3. **Client usage** (see `src/features/EXAMPLE-post/components/posts-view.tsx`):
-   ```typescript
-   import { orpcClient, orpcTanstackQueryUtils } from "@/lib/orpc/client";
-
-   // TanStack Query
-   const { data } = useQuery(
-     orpcTanstackQueryUtils.post.listAllPosts.queryOptions()
-   );
-
-   // Mutations
-   const mutation = useMutation({
-     mutationFn: (data) => orpcClient.post.createPost(data),
-     onSuccess: () => {
-       queryClient.invalidateQueries(
-         orpcTanstackQueryUtils.post.listAllPosts.queryOptions()
-       );
-     },
-   });
-   ```
-
-### Data Tables with TanStack Table
-
-Follow the pattern in `src/features/EXAMPLE-post/components/posts-view.tsx`:
-- Use `useReactTable` with column definitions
-- Implement sorting with `<SortableHeader>` from `src/components/table/sortable-header.tsx`
-- Include global filtering, pagination, and CRUD operations via dialogs
-- **Important**: Use `useRef` to prevent React Compiler auto-optimization issues:
-  ```typescript
-  const tableHook = useReactTable({ /* config */ });
-  const tableRef = useRef(tableHook);
-  const table = tableRef.current; // Use this in JSX
-  ```
+Use `useReactTable` with `useRef` wrapper (React Compiler workaround).
+See `src/features/EXAMPLE-post/components/posts-table.tsx`.
 
 ### Form Handling
 
-Combine React Hook Form + Zod + shadcn/ui Form components:
-```typescript
-const schema = z.object({ title: z.string().min(1) });
-const form = useForm<z.infer<typeof schema>>({
-  resolver: zodResolver(schema),
-  defaultValues: { title: "" },
-});
-```
+React Hook Form + Zod + shadcn/ui Form components.
+See `src/features/EXAMPLE-post/` for pattern.
 
 ### Authentication
 
@@ -177,31 +130,14 @@ NODE_ENV
 - Tag with `memory-cache` for LRU-only caching
 - Requires `REDIS_URL` env var in production
 
-### Import Aliases
+## Feature Documentation
 
-- `@/*` maps to `src/*`
-- shadcn/ui components: `@/components/ui/*`
-- Utils: `@/lib/utils`
-
-## Adding New Features
-
-1. Create feature directory: `src/features/[feature-name]/`
-2. Add routes in `routes/` subfolder
-3. Export router from `routes/index.ts`
-4. Register in `src/lib/orpc/router.ts`
-5. Create components in `components/` subfolder
-6. Add database tables to `src/db/drizzle/schema.ts` if needed
-7. Run `pnpm db:generate` and `pnpm db:migrate` for schema changes
-
-## File Naming
-
-- Components: PascalCase (e.g., `PostsView.tsx` → use `posts-view.tsx`)
-- Routes: kebab-case (e.g., `create-post.ts`)
-- Utilities: kebab-case (e.g., `media-converter.ts`)
+Features may include a `docs/` subfolder with `.md` files for developer-facing documentation. `overview.md` covers the domain map, routes, types, and components; additional `.md` files document complex subsystems. Add docs when a feature exceeds ~15 files, has complex type systems, or involves multiple interacting domains.
 
 ## Notes
 
-- React Compiler enabled in production
+- All files use kebab-case naming (e.g., `posts-table.tsx`, `create-post.ts`)
+- React Compiler enabled globally
 - Standalone output mode configured for Docker deployment
 - Uses pnpm as package manager
 - Prettier configured with import organization and Tailwind sorting
