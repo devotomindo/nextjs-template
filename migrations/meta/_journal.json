@@ -8,6 +8,13 @@
       "when": 1759671614770,
       "tag": "0000_first_sphinx",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1772612551205,
+      "tag": "0001_blushing_talkback",
+      "breakpoints": true
     }
   ]
 }
