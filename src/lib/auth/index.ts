@@ -15,6 +15,7 @@ import { v7 as uuidv7 } from "uuid";
 const db = createDrizzleConnection();
 
 export const auth = betterAuth({
+  experimental: { joins: true },
   secret: env.BETTER_AUTH_SECRET,
   database: drizzleAdapter(db, {
     provider: "pg",
