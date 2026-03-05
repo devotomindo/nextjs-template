@@ -1,20 +1,30 @@
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   postgres:
+    logging: *default-logging
     extends:
       file: docker-compose.yml
       service: postgres
 
   pgbouncer:
+    logging: *default-logging
     extends:
       file: docker-compose.yml
       service: pgbouncer
 
   minio:
+    logging: *default-logging
     extends:
       file: docker-compose.yml
       service: minio
 
   redis:
+    logging: *default-logging
     image: redis:8.4-alpine
     restart: always
     ports:
@@ -55,11 +65,13 @@ services:
       driver: "json-file"
       options:
         max-size: "10m"
+        max-file: "3"
     restart: always
     expose:
       - 3000
 
   caddy:
+    logging: *default-logging
     image: caddy:2.10.2-alpine
     restart: always
     ports:

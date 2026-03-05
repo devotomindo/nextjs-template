@@ -1,0 +1,40 @@
+server:
+  http_listen_port: 9080
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: docker
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: docker
+          __path__: /var/lib/docker/containers/**/*.log
+
+    pipeline_stages:
+      # Parse Docker json-file log format
+      - docker: {}
+
+      # Extract container name from filename path
+      - regex:
+          source: filename
+          expression: '/var/lib/docker/containers/(?P<container_id>[^/]+)/'
+
+      # Add container name label via Docker API label (populated by docker driver)
+      - labels:
+          container_id:
+
+      # Try to parse JSON logs (Pino output) and extract fields
+      - json:
+          expressions:
+            level: level
+            module: module
+          source: output
+      - labels:
+          level:
+          module:

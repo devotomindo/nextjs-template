@@ -8,6 +8,9 @@ export const env = createEnv({
     MINIO_ROOT_PASSWORD: z.string().min(1),
     MINIO_ENDPOINT: z.string().min(1),
     BETTER_AUTH_SECRET: z.string().min(1),
+    LOG_LEVEL: z
+      .enum(["fatal", "error", "warn", "info", "debug", "trace"])
+      .optional(),
   },
   shared: {
     NODE_ENV: z
@@ -25,6 +28,7 @@ export const env = createEnv({
     MINIO_ROOT_PASSWORD: process.env.MINIO_ROOT_PASSWORD,
     MINIO_ENDPOINT: process.env.MINIO_ENDPOINT,
     BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
+    LOG_LEVEL: process.env.LOG_LEVEL,
     NODE_ENV: process.env.NODE_ENV,
   },
   /**

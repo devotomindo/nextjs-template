@@ -8,17 +8,17 @@ Reference implementation demonstrating the full feature pattern: oRPC routes, Ta
 
 ## Routes
 
-| Route | File | Description |
-|-------|------|-------------|
+| Route               | File                       | Description                 |
+| ------------------- | -------------------------- | --------------------------- |
 | `post.listAllPosts` | `routes/list-all-posts.ts` | Paginated list with sorting |
-| `post.createPost` | `routes/create-post.ts` | Create with Zod validation |
-| `post.updatePost` | `routes/update-post.ts` | Update by ID |
-| `post.deletePost` | `routes/delete-post.ts` | Delete by ID |
+| `post.createPost`   | `routes/create-post.ts`    | Create with Zod validation  |
+| `post.updatePost`   | `routes/update-post.ts`    | Update by ID                |
+| `post.deletePost`   | `routes/delete-post.ts`    | Delete by ID                |
 
 ## Components
 
-| Component | File | Description |
-|-----------|------|-------------|
+| Component    | File                         | Description                                                                        |
+| ------------ | ---------------------------- | ---------------------------------------------------------------------------------- |
 | `PostsTable` | `components/posts-table.tsx` | TanStack Table with global filter, pagination, sortable headers, dialog-based CRUD |
 
 ## Usage

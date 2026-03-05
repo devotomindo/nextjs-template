@@ -4,14 +4,14 @@ Authentication UI and server-side auth guard for Better Auth integration.
 
 ## Components
 
-| Component | File | Description |
-|-----------|------|-------------|
+| Component   | File                        | Description                                                                    |
+| ----------- | --------------------------- | ------------------------------------------------------------------------------ |
 | `LoginForm` | `components/login-form.tsx` | Email/password login with Zod validation, redirects to `/dashboard` on success |
 
 ## Guards
 
-| Guard | File | Description |
-|-------|------|-------------|
+| Guard       | File                   | Description                                                                                            |
+| ----------- | ---------------------- | ------------------------------------------------------------------------------------------------------ |
 | `authGuard` | `guards/auth-guard.ts` | Server-only session validator with role-based checks, returns `[Session \| null, Error \| null]` tuple |
 
 ## Usage

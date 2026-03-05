@@ -1,4 +1,5 @@
 import { env } from "@/env";
+import { createLogger } from "@/lib/logger";
 import {
   DeleteObjectCommand,
   GetObjectCommand,
@@ -10,6 +11,8 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import * as fs from "fs";
 import { Readable } from "stream";
 import { pipeline } from "stream/promises";
+
+const logger = createLogger("s3-storage");
 
 export const StorageBucket = {
   PUBLIC: "data",
@@ -129,7 +132,7 @@ export async function getObject(filePath: string) {
     // Return the object's body stream
     return response.Body;
   } catch (error) {
-    console.error("[S3-STORAGE-UTILS] Error downloading file from S3:", error);
+    logger.error({ err: error }, "Error downloading file from S3");
     throw new Error(
       `[S3-STORAGE-UTILS] ${error instanceof Error ? error.message : String(error)}`,
     );
@@ -151,7 +154,7 @@ export async function downloadFile(filePath: string): Promise<Buffer> {
     const fileBuffer = await fileObject.transformToByteArray();
     return Buffer.from(fileBuffer);
   } catch (error) {
-    console.error("[S3-STORAGE-UTILS] Error downloading file:", error);
+    logger.error({ err: error }, "Error downloading file");
     throw new Error(
       `[S3-STORAGE-UTILS] ${error instanceof Error ? error.message : String(error)}`,
     );
@@ -200,10 +203,7 @@ export async function streamDownloadFile(
 
     await pipeline(bodyStream, writeStream);
   } catch (error) {
-    console.error(
-      "[S3-STORAGE-UTILS] Error streaming download from S3:",
-      error,
-    );
+    logger.error({ err: error }, "Error streaming download from S3");
     throw new Error(
       `[S3-STORAGE-UTILS] ${error instanceof Error ? error.message : String(error)}`,
     );
@@ -271,7 +271,7 @@ export async function uploadFile(
     await s3Client.send(command);
     return filePath;
   } catch (error) {
-    console.error("[S3-STORAGE-UTILS] Error uploading file to S3:", error);
+    logger.error({ err: error }, "Error uploading file to S3");
     throw new Error(
       `[S3-STORAGE-UTILS] ${error instanceof Error ? error.message : String(error)}`,
     );
@@ -327,7 +327,7 @@ export async function streamUploadFile(
     await upload.done();
     return filePath;
   } catch (error) {
-    console.error("[S3-STORAGE-UTILS] Error streaming upload to S3:", error);
+    logger.error({ err: error }, "Error streaming upload to S3");
     throw new Error(
       `[S3-STORAGE-UTILS] ${error instanceof Error ? error.message : String(error)}`,
     );
@@ -351,7 +351,7 @@ export async function deleteFile(filePath: string): Promise<void> {
   try {
     await s3Client.send(command);
   } catch (error) {
-    console.error("[S3-STORAGE-UTILS] Error deleting file from S3:", error);
+    logger.error({ err: error }, "Error deleting file from S3");
     throw new Error(
       `[S3-STORAGE-UTILS] ${error instanceof Error ? error.message : String(error)}`,
     );

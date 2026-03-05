@@ -1,3 +1,4 @@
+import { getRequestContext } from "@/lib/request-context";
 import { router } from "@/lib/orpc/router";
 import { RPCHandler } from "@orpc/server/fetch";
 import { RequestHeadersPlugin } from "@orpc/server/plugins";
@@ -16,7 +17,18 @@ async function handleRequest(request: Request) {
     },
   });
 
-  return response ?? new Response("Not found", { status: 404 });
+  if (!response) {
+    return new Response("Not found", { status: 404 });
+  }
+
+  const requestId = getRequestContext()?.requestId;
+  if (requestId) {
+    const cloned = new Response(response.body, response);
+    cloned.headers.set("x-request-id", requestId);
+    return cloned;
+  }
+
+  return response;
 }
 
 export const HEAD = handleRequest;
