@@ -1,10 +1,12 @@
 import { seedAccount } from "./account.seed";
 import { seedPosts } from "./posts.seed";
+import { seedStorage } from "./storage.seed";
 
 async function runAllSeeds() {
   console.log("🌱 Starting database seeding...");
 
   try {
+    await seedStorage();
     await seedAccount();
     await seedPosts();
 

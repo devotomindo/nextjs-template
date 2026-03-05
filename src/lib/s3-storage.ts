@@ -5,7 +5,24 @@ import {
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
+import { Upload } from "@aws-sdk/lib-storage";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import * as fs from "fs";
+import { Readable } from "stream";
+import { pipeline } from "stream/promises";
+
+export const StorageBucket = {
+  PUBLIC: "data",
+  PRIVATE: "private-data",
+} as const;
+
+export type StorageBucketName =
+  (typeof StorageBucket)[keyof typeof StorageBucket];
+
+export function isBucketPrivate(bucketOrPath: string): boolean {
+  const bucket = bucketOrPath.split("/")[0];
+  return bucket === StorageBucket.PRIVATE;
+}
 
 export function getStorageBucketAndPath(fullPath: string) {
   const [bucket, ...path] = fullPath.split("/");
@@ -32,43 +49,65 @@ export function getS3Client({
 }
 
 /**
- * Converts a stored file path to a URL
- * @param filePath - The file path stored in the database (e.g., "post/123-abc.jpg")
- * @param options - Configuration options
- * @param options.isPrivate - Whether the file is in a private bucket requiring authentication (default: false)
- * @param options.expiresIn - Expiration time in seconds for signed URLs (default: 3600 = 1 hour)
- * @returns A URL for the file (signed URL for private files, direct URL for public files)
+ * Converts a stored file path to a URL.
+ * Auto-detects whether the file is private based on bucket name in the path.
+ * Private files get presigned URLs; public files get direct URLs.
  */
-export async function getFileUrl<T extends boolean | undefined = false>(
+export async function getFileUrl(
+  filePath: string,
+  options?: { expiresIn?: number },
+): Promise<string>;
+export async function getFileUrl(
   filePath: string | null | undefined,
-  options?: {
-    isPrivate?: T;
-    expiresIn?: number;
-  },
-): Promise<T extends true ? string | null : string> {
-  if (!filePath) return null as any;
+  options?: { expiresIn?: number },
+): Promise<string | null>;
+export async function getFileUrl(
+  filePath: string | null | undefined,
+  options?: { expiresIn?: number },
+): Promise<string | null> {
+  if (!filePath) return null;
 
-  const { isPrivate = false, expiresIn = 3600 } = options || {};
+  const { expiresIn = 3600 } = options ?? {};
   const { bucket, path } = getStorageBucketAndPath(filePath);
 
-  // For public files, return a direct URL
-  if (!isPrivate) {
+  if (!isBucketPrivate(filePath)) {
     return `${S3_ENDPOINT}/${bucket}/${path}`;
   }
 
-  // For private files, generate a signed URL
   const s3Client = getS3Client();
   const command = new GetObjectCommand({
     Bucket: bucket,
     Key: path,
   });
 
-  try {
-    return await getSignedUrl(s3Client, command, { expiresIn });
-  } catch (error) {
-    console.error("[S3-STORAGE-UTILS] Error generating signed URL:", error);
-    return null as any;
-  }
+  const url = await getSignedUrl(s3Client, command, { expiresIn });
+  return url;
+}
+
+export interface PresignedPutUrlOptions {
+  contentType?: string;
+  expiresIn?: number;
+}
+
+/**
+ * Generates a presigned PUT URL for uploading a file to S3.
+ * @param filePath - Full storage path including bucket (e.g., "private-data/match-id/file.mp4")
+ */
+export async function getPresignedPutUrl(
+  filePath: string,
+  options?: PresignedPutUrlOptions,
+): Promise<string> {
+  const { contentType, expiresIn = 3600 } = options ?? {};
+  const s3Client = getS3Client();
+  const { bucket, path } = getStorageBucketAndPath(filePath);
+
+  const command = new PutObjectCommand({
+    Bucket: bucket,
+    Key: path,
+    ContentType: contentType,
+  });
+
+  return getSignedUrl(s3Client, command, { expiresIn });
 }
 
 /**
@@ -127,6 +166,48 @@ export async function downloadFile(filePath: string): Promise<Buffer> {
 export async function downloadFileAsBase64(filePath: string): Promise<string> {
   const fileBuffer = await downloadFile(filePath);
   return fileBuffer.toString("base64");
+}
+
+/**
+ * Downloads a file from S3 storage directly to a local file using streaming
+ * This avoids loading the entire file into memory and works for files > 2GB
+ * @param storagePath - The file path in S3 (e.g., "bucket/path/to/file.mp4")
+ * @param localFilePath - The local file path to save to
+ * @returns A promise that resolves when the download is complete
+ */
+export async function streamDownloadFile(
+  storagePath: string,
+  localFilePath: string,
+): Promise<void> {
+  const s3Client = getS3Client();
+  const { bucket, path } = getStorageBucketAndPath(storagePath);
+
+  const command = new GetObjectCommand({
+    Bucket: bucket,
+    Key: path,
+  });
+
+  try {
+    const response = await s3Client.send(command);
+
+    if (!response.Body) {
+      throw new Error("No body in S3 response");
+    }
+
+    // Convert the SDK stream to a Node.js readable stream and pipe to file
+    const writeStream = fs.createWriteStream(localFilePath);
+    const bodyStream = response.Body as Readable;
+
+    await pipeline(bodyStream, writeStream);
+  } catch (error) {
+    console.error(
+      "[S3-STORAGE-UTILS] Error streaming download from S3:",
+      error,
+    );
+    throw new Error(
+      `[S3-STORAGE-UTILS] ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
 }
 
 /**
@@ -191,6 +272,62 @@ export async function uploadFile(
     return filePath;
   } catch (error) {
     console.error("[S3-STORAGE-UTILS] Error uploading file to S3:", error);
+    throw new Error(
+      `[S3-STORAGE-UTILS] ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+}
+
+/**
+ * Uploads a file to S3 storage using multipart streaming upload
+ * This avoids loading the entire file into memory and works for files > 2GB
+ * @param filePath - The destination path in S3 (e.g., "bucket/path/to/file.mp4")
+ * @param localFilePath - The local file path to upload
+ * @param contentType - MIME type of the file (e.g., "video/mp4")
+ * @param onProgress - Optional callback for upload progress
+ * @returns A promise that resolves to the uploaded file path
+ */
+export async function streamUploadFile(
+  filePath: string,
+  localFilePath: string,
+  contentType?: string,
+  onProgress?: (progress: { loaded: number; total: number }) => void,
+): Promise<string> {
+  const s3Client = getS3Client();
+  const { bucket, path } = getStorageBucketAndPath(filePath);
+
+  // Create a read stream from the local file
+  const fileStream = fs.createReadStream(localFilePath);
+  const fileStats = fs.statSync(localFilePath);
+
+  const upload = new Upload({
+    client: s3Client,
+    params: {
+      Bucket: bucket,
+      Key: path,
+      Body: fileStream,
+      ContentType: contentType,
+    },
+    // 5MB part size (minimum for S3)
+    partSize: 5 * 1024 * 1024,
+    // Upload 4 parts concurrently
+    queueSize: 4,
+  });
+
+  if (onProgress) {
+    upload.on("httpUploadProgress", (progress) => {
+      onProgress({
+        loaded: progress.loaded ?? 0,
+        total: fileStats.size,
+      });
+    });
+  }
+
+  try {
+    await upload.done();
+    return filePath;
+  } catch (error) {
+    console.error("[S3-STORAGE-UTILS] Error streaming upload to S3:", error);
     throw new Error(
       `[S3-STORAGE-UTILS] ${error instanceof Error ? error.message : String(error)}`,
     );
