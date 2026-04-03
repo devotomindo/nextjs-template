@@ -1,8 +1,8 @@
 x-logging: &default-logging
   driver: "json-file"
   options:
-    max-size: "10m"
-    max-file: "3"
+    max-size: "20m"
+    max-file: "10"
 
 services:
   postgres:
@@ -66,8 +66,8 @@ services:
     logging:
       driver: "json-file"
       options:
-        max-size: "10m"
-        max-file: "3"
+        max-size: "20m"
+        max-file: "10"
     restart: always
     expose:
       - 3000

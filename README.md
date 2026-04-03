@@ -200,6 +200,78 @@ docker compose -f docker-compose.production.yml exec nextjs pnpm db:migrate
 - **Application**: http://your-domain.com (or http://localhost if using Caddy locally)
 - **Health Check**: Monitor logs with `docker compose -f docker-compose.production.yml logs -f nextjs`
 
+## Monitoring
+
+The monitoring stack provides observability via Grafana dashboards — pre-configured and loaded automatically on startup. No manual setup required.
+
+### Stack
+
+| Service | Purpose |
+|---|---|
+| **Grafana** | Dashboard UI — open this in your browser |
+| **Loki** | Log storage and querying |
+| **Promtail** | Log collector — scrapes Docker container logs |
+| **Prometheus** | Metrics storage |
+| **cAdvisor** | Container metrics (CPU, memory, network) |
+
+### Environment Variables
+
+Add these to your `.env`:
+
+```env
+GRAFANA_PORT=3100
+GRAFANA_ADMIN_PASSWORD=your-secure-password
+```
+
+### Start the Monitoring Stack
+
+Run alongside your production stack:
+
+```bash
+docker compose -f docker-compose.production.yml -f docker-compose.monitoring.yml up -d
+```
+
+Or standalone for development:
+
+```bash
+docker compose -f docker-compose.monitoring.yml up -d
+```
+
+### Access Grafana
+
+Open **http://localhost:3100** (or your `GRAFANA_PORT`) and log in with:
+
+- **Username**: `admin`
+- **Password**: your `GRAFANA_ADMIN_PASSWORD` (default: `admin`)
+
+### Pre-built Dashboards
+
+Two dashboards are provisioned automatically:
+
+**Docker Metrics** — Container CPU, memory, and network usage over time with host/container dropdowns.
+
+**Docker Logs** — Searchable log viewer for all containers. Supports:
+- Filter by container name
+- Full-text search (e.g. type `userId=abc` or `module=orpc` in the Search box)
+- Log volume chart by level (info/warn/error)
+- Pino JSON logs are pretty-printed automatically
+
+### Log Retention
+
+Logs are retained in Loki for **7 days** (configured in `monitoring/loki-config.yml`). Each service also writes up to 200MB of rolling logs to the host disk (`20MB × 10 files`) — accessible via Portainer or `docker logs`.
+
+### Viewing Logs Outside Grafana
+
+Since all containers use Docker's `json-file` log driver, logs are also available via:
+
+```bash
+# CLI
+docker logs <container-name> --follow
+
+# Portainer
+# Navigate to container → Logs tab (same data, plain text view)
+```
+
 ## Using This as a Template
 
 ### Option 1: GitHub Template (Recommended)
