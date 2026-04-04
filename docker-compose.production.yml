@@ -25,7 +25,7 @@ services:
 
   redis:
     logging: *default-logging
-    image: redis:8.4-alpine
+    image: redis:8.6.2-alpine
     restart: always
     ports:
       - "${REDIS_PORT:-6379}:6379"
@@ -74,7 +74,7 @@ services:
 
   caddy:
     logging: *default-logging
-    image: caddy:2.10.2-alpine
+    image: caddy:2.11.2-alpine
     restart: always
     ports:
       - ${CADDY_HTTP_PORT:-80}:80
