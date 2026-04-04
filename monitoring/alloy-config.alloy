@@ -35,7 +35,9 @@ loki.process "pipeline" {
   forward_to = [loki.write.default.receiver]
 
   // Extract "level" and "module" from Pino JSON logs.
-  // Parses the raw log line as JSON. Non-JSON containers skip gracefully.
+  // loki.source.docker reads from the Docker API (not json-file log files), so it
+  // delivers the unwrapped log message directly — no stage.docker {} needed and no
+  // source = "output" field. Parses the raw log line as JSON; non-JSON containers skip gracefully.
   stage.json {
     expressions = {
       level  = "level",
