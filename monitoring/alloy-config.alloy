@@ -34,19 +34,13 @@ loki.source.docker "docker" {
 loki.process "pipeline" {
   forward_to = [loki.write.default.receiver]
 
-  // Unwrap Docker's JSON-file log driver format.
-  // Sets the log line to the inner message and populates the "output" extracted variable.
-  stage.docker {}
-
   // Extract "level" and "module" from Pino JSON logs.
-  // source = "output" means: parse the inner log line (set by stage.docker) as JSON.
-  // Non-Pino containers produce non-JSON output — the stage skips gracefully.
+  // Parses the raw log line as JSON. Non-JSON containers skip gracefully.
   stage.json {
     expressions = {
       level  = "level",
       module = "module",
     }
-    source = "output"
   }
 
   // Convert Pino's numeric level to a human-readable string.
