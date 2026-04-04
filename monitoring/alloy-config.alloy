@@ -1,0 +1,75 @@
+// Discover all running Docker containers via the Docker socket.
+discovery.docker "containers" {
+  host             = "unix:///var/run/docker.sock"
+  refresh_interval = "5s"
+}
+
+// Relabel discovered targets:
+//   - Strip the leading "/" from container names (e.g. /myapp → myapp)
+//   - Capture the log stream (stdout/stderr) as a label
+discovery.relabel "docker" {
+  targets = discovery.docker.containers.targets
+
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/(.*)"
+    target_label  = "container_name"
+  }
+
+  rule {
+    source_labels = ["__meta_docker_container_log_stream"]
+    target_label  = "stream"
+  }
+}
+
+// Tail logs from each discovered container and apply the relabeling rules.
+loki.source.docker "docker" {
+  host             = "unix:///var/run/docker.sock"
+  targets          = discovery.relabel.docker.output
+  forward_to       = [loki.process.pipeline.receiver]
+  relabeling_rules = discovery.relabel.docker.rules
+}
+
+// Processing pipeline — equivalent to promtail's pipeline_stages.
+loki.process "pipeline" {
+  forward_to = [loki.write.default.receiver]
+
+  // Unwrap Docker's JSON-file log driver format.
+  // Sets the log line to the inner message and populates the "output" extracted variable.
+  stage.docker {}
+
+  // Extract "level" and "module" from Pino JSON logs.
+  // source = "output" means: parse the inner log line (set by stage.docker) as JSON.
+  // Non-Pino containers produce non-JSON output — the stage skips gracefully.
+  stage.json {
+    expressions = {
+      level  = "level",
+      module = "module",
+    }
+    source = "output"
+  }
+
+  // Convert Pino's numeric level to a human-readable string.
+  // Non-numeric or missing values pass through unchanged.
+  stage.template {
+    source   = "level"
+    template = "{{ if eq .Value \"10\" }}trace{{ else if eq .Value \"20\" }}debug{{ else if eq .Value \"30\" }}info{{ else if eq .Value \"40\" }}warn{{ else if eq .Value \"50\" }}error{{ else if eq .Value \"60\" }}fatal{{ else }}{{ .Value }}{{ end }}"
+  }
+
+  // Promote extracted variables to Loki stream labels.
+  // Empty string value means: use the extracted variable with the same name as the key.
+  stage.labels {
+    values = {
+      level          = "",
+      module         = "",
+      container_name = "",
+    }
+  }
+}
+
+// Push collected logs to Loki.
+loki.write "default" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}
