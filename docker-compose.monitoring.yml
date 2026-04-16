@@ -15,7 +15,7 @@ services:
     restart: always
     volumes:
       - ./monitoring/loki-config.yml:/etc/loki/config.yml:ro
-      - ./docker_data/loki_data:/loki
+      - loki_data:/loki
     command: -config.file=/etc/loki/config.yml
     expose:
       - 3100
@@ -25,7 +25,7 @@ services:
     restart: always
     volumes:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - ./docker_data/prometheus_data:/prometheus
+      - prometheus_data:/prometheus
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/prometheus"
@@ -54,7 +54,12 @@ services:
     volumes:
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./monitoring/grafana/dashboards:/etc/grafana/dashboards:ro
-      - ./docker_data/grafana_data:/var/lib/grafana
+      - grafana_data:/var/lib/grafana
     depends_on:
       - loki
       - prometheus
+
+volumes:
+  loki_data:
+  prometheus_data:
+  grafana_data:

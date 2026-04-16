@@ -26,8 +26,7 @@ discovery.relabel "docker" {
 loki.source.docker "docker" {
   host             = "unix:///var/run/docker.sock"
   targets          = discovery.relabel.docker.output
-  forward_to       = [loki.process.pipeline.receiver]
-  relabeling_rules = discovery.relabel.docker.rules
+  forward_to = [loki.process.pipeline.receiver]
 }
 
 // Processing pipeline — equivalent to promtail's pipeline_stages.
