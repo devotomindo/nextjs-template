@@ -1,8 +1,8 @@
 x-logging: &default-logging
   driver: "json-file"
   options:
-    max-size: "20m"
-    max-file: "10"
+    max-size: "10m"
+    max-file: "3"
 
 services:
   postgres:
@@ -63,11 +63,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "20m"
-        max-file: "10"
+    logging: *default-logging
     restart: always
     expose:
       - 3000
