@@ -1,4 +1,9 @@
 example.com {
     # Forward everything to NextJS app
     reverse_proxy nextjs:3000
-} 
+}
+
+# Uncomment to expose Grafana via Caddy
+# grafana.example.com {
+#     reverse_proxy grafana:3000
+# } 
