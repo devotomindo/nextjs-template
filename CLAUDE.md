@@ -21,10 +21,6 @@ you cut will be cut again.
 
 **Fight entropy. Leave the codebase better than you found it.**
 
-## Plans
-
-- At the end of each plan, give me a list of unresolved questions to answer, if any. Make the questions extremely concise. Sacrifice grammar for the sake of concision.
-
 ## Project Overview
 
 A Next.js 16 full-stack application template with TypeScript, featuring type-safe RPC communication via oRPC, authentication with Better Auth, database management with Drizzle ORM and PostgreSQL, S3-compatible storage (MinIO), and Redis caching.
